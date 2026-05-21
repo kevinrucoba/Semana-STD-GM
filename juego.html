@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GM Ninja: Reto Takt Time</title>
+    <style>
+        :root {
+            --primary: #007A33;
+            --dark: #00441b;
+            --light: #f8f9fa;
+            --danger: #dc3545;
+            --gold: #FFD700;
+        }
+
+        * { box-sizing: border-box; user-select: none; touch-action: none; }
+
+        body {
+            margin: 0; padding: 0; height: 100vh; overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at center, #28a745 0%, #155724 100%);
+            color: white; cursor: crosshair;
+        }
+
+        /* === UI DEL DASHBOARD === */
+        .dashboard {
+            position: absolute; top: 10px; left: 10px; right: 10px; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.95); padding: 10px 20px;
+            border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            color: #333; font-weight: bold; font-size: 1.2rem;
+            border: 3px solid var(--gold);
+        }
+        .time-box { display: flex; gap: 20px; }
+        .takt-time { color: var(--primary); font-size: 1.5rem; }
+        .actual-time { color: var(--danger); font-size: 1.5rem; transition: transform 0.1s; }
+        .penalty-flash { color: red !important; transform: scale(1.3); }
+
+        /* === PROGRESO DEL KIT === */
+        .kit-progress {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;
+            background: rgba(255, 255, 255, 0.9); padding: 10px 20px; border-radius: 20px;
+            display: flex; gap: 15px; border: 3px solid var(--dark);
+        }
+        .kit-slot {
+            width: 50px; height: 50px; border: 3px dashed #ccc; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .kit-slot img { width: 40px; height: 40px; object-fit: contain; animation: popIn 0.3s; }
+        
+        @keyframes popIn { 0% {transform: scale(0);} 80% {transform: scale(1.3);} 100% {transform: scale(1);} }
+
+        /* === ÁREA DEL JUEGO === */
+        #game-area { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
+        .throwable {
+            position: absolute; width: 90px; height: 90px; object-fit: contain;
+            filter: drop-shadow(0 10px 5px rgba(0,0,0,0.4));
+            will-change: transform; pointer-events: none;
+        }
+        .sliced-good { transition: all 0.2s ease-out; transform: scale(1.5) !important; opacity: 0; filter: brightness(2) !important; }
+        #red-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(220, 53, 69, 0.5); z-index: 90; display: none; pointer-events: none;
+        }
+
+        /* === MODALES === */
+        .modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal-content { background: white; color: #333; padding: 40px; border-radius: 15px; text-align: center; border: 5px solid var(--gold); max-width: 80%; }
+        .start-btn { font-size: 2rem; padding: 20px 40px; background: var(--primary); color: white; border: none; border-radius: 15px; cursor: pointer; box-shadow: 0 5px 0 var(--dark); margin-top: 20px; font-weight: bold;}
+        .start-btn:active { transform: translateY(5px); box-shadow: none; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 1.2rem; }
+        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: var(--primary); color: white; }
+        
+        /* Indicador visual de dificultad */
+        .level-indicator {
+            position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 10px; font-weight: bold;
+            z-index: 50; transition: color 0.5s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div>📦 Kits: <span id="kit-count">0</span> / 15</div>
+        <div class="time-box">
+            <div class="takt-time">Takt Time: 5.00s</div>
+            <div class="actual-time" id="actual-time-display">Actual Time: 0.00s</div>
+        </div>
+    </div>
+
+    <!-- Indicador de intensidad -->
+    <div class="level-indicator" id="level-indicator">Nivel de Línea: NORMAL</div>
+
+    <div class="kit-progress" id="kit-progress">
+        <div class="kit-slot" id="slot-0"></div>
+        <div class="kit-slot" id="slot-1"></div>
+        <div class="kit-slot" id="slot-2"></div>
+        <div class="kit-slot" id="slot-3"></div>
+    </div>
+
+    <div id="red-flash"></div>
+    <div id="game-area"></div>
+
+    <div class="modal" id="start-screen">
+        <div class="modal-content" style="background: transparent; border: none; color: white;">
+            <h1 style="font-size: 4rem; margin:0; text-shadow: 2px 2px 0 #000;">ENSAMBLE NINJA</h1>
+            <p style="font-size: 1.5rem;">Desliza para ensamblar piezas. Evita los Defectos (Muda).<br>⚠️ ¡Atención! La línea se moverá más rápido con cada kit.</p>
+            <button class="start-btn" onclick="startGame()">▶️ INICIAR PRODUCCIÓN</button>
+        </div>
+    </div>
+
+    <div class="modal" id="end-screen" style="display: none;">
+        <div class="modal-content">
+            <h2 style="font-size: 2.5rem; margin-top:0;">📊 Reporte de Turno</h2>
+            <table>
+                <tr><th>Métrica Lean</th><th>Resultado</th></tr>
+                <tr><td>Kits dentro de Takt Time</td><td id="res-verdes">0</td></tr>
+                <tr><td>Kits Atrasados (> 5.00s)</td><td id="res-rojos">0</td></tr>
+                <tr><td>Defectos procesados (Bombas)</td><td id="res-bombas">0</td></tr>
+                <tr><td>Tiempo Ciclo Promedio</td><td id="res-promedio">0.00s</td></tr>
+            </table>
+            <button class="start-btn" style="font-size: 1.5rem; padding: 15px 30px;" onclick="location.reload()">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        // === RUTAS DE IMÁGENES (Usa tus Paths o URLs aquí) ===
+        const IMAGENES_BUENAS = [
+            'img/playera.png',
+            'img/short.png',
+            'img/tachones.png',
+            'img/balon.png'
+        ];
+
+        const IMAGENES_MALAS = [
+            'img/RamonFranco.jpg',
+            'img/chuy.jpg',
+            'img/lamar.jpg'   
+        ];
+
+        // === VARIABLES DEL JUEGO ===
+        let isPlaying = false;
+        let activeItems = [];
+        const gameArea = document.getElementById('game-area');
+        
+        let kitsCompleted = 0;
+        const maxKits = 15;
+        let currentKitPieces = 0;
+        
+        let startTime = 0;
+        let currentActualTime = 0;
+        let timerInterval;
+        let spawnInterval;
+        let metrics = { verdes: 0, rojos: 0, bombas: 0, tiempoTotal: 0 };
+
+        // === ENGINE GRÁFICO (LOOP) ===
+        function loop() {
+            if (!isPlaying) return;
+
+            for (let i = activeItems.length - 1; i >= 0; i--) {
+                let item = activeItems[i];
+                if (item.sliced) continue;
+
+                item.vy += item.gravity; // Gravedad individual por pieza
+                item.x += item.vx;
+                item.y += item.vy;
+                item.rot += item.vrot; 
+
+                item.el.style.transform = `translate(${item.x}px, ${item.y}px) rotate(${item.rot}deg)`;
+
+                if (item.y > window.innerHeight + 100) {
+                    item.el.remove();
+                    activeItems.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(loop);
+        }
+
+        // === SISTEMA DE DIFICULTAD PROGRESIVA ===
+        function spawnItem() {
+            if (!isPlaying) return;
+
+            // 1. FACTOR DE DIFICULTAD (de 0.0 al inicio, a 1.0 al final)
+            let diffFactor = kitsCompleted / maxKits;
+
+            // 2. PROBABILIDAD DE BOMBAS (Inicia en 10%, termina en 45%)
+            let badProb = 0.10 + (0.35 * diffFactor);
+            let isBad = Math.random() < badProb;
+
+            let imgSrc = isBad 
+                ? IMAGENES_MALAS[Math.floor(Math.random() * IMAGENES_MALAS.length)] 
+                : IMAGENES_BUENAS[Math.floor(Math.random() * IMAGENES_BUENAS.length)];
+
+            let img = document.createElement('img');
+            img.src = imgSrc;
+            img.className = 'throwable';
+            gameArea.appendChild(img);
+
+            let startX = 50 + Math.random() * (window.innerWidth - 150);
+            let startY = window.innerHeight + 50;
+            let vx = (window.innerWidth / 2 - startX) * 0.015 + (Math.random() * 4 - 2);
+            
+            // 3. VELOCIDAD Y GRAVEDAD PROGRESIVAS
+            // Salen impulsados más rápido hacia arriba
+            let baseVy = 13 + (5 * diffFactor);
+            let vy = -(baseVy + Math.random() * 4); 
+            // Caen más rápido (gravedad de 0.25 a 0.65)
+            let itemGravity = 0.25 + (0.40 * diffFactor);
+
+            activeItems.push({
+                el: img, isBad: isBad, sliced: false, src: imgSrc,
+                x: startX, y: startY, vx: vx, vy: vy,
+                gravity: itemGravity, // Guardamos la gravedad propia de este objeto
+                rot: Math.random() * 360, vrot: Math.random() * 10 - 5
+            });
+        }
+
+        function spawnerEngine() {
+            if(!isPlaying) return;
+            
+            spawnItem();
+            
+            let diffFactor = kitsCompleted / maxKits;
+
+            // 4. POSIBILIDAD DE OBJETOS MÚLTIPLES SIMULTÁNEOS
+            // Sube la probabilidad de que salgan 2 o 3 piezas a la vez
+            let multiSpawnProb = 0.15 + (0.45 * diffFactor);
+            if(Math.random() < multiSpawnProb) {
+                setTimeout(spawnItem, 150 + Math.random() * 200); // Lanza un segundo objeto muy rápido
+            }
+
+            // 5. TIEMPO ENTRE LANZAMIENTOS MÁS CORTO
+            // Al inicio espera 1.2s - 2.2s. Al final espera 0.5s - 1.0s.
+            let baseDelay = 1200 - (700 * diffFactor);
+            let randDelay = 1000 - (500 * diffFactor);
+
+            spawnInterval = setTimeout(spawnerEngine, baseDelay + Math.random() * randDelay);
+        }
+
+        // === MECÁNICA DE CORTE (SWIPE) ===
+        let isSwiping = false;
+
+        document.addEventListener('pointerdown', (e) => { isSwiping = true; checkSlice(e.clientX, e.clientY); });
+        document.addEventListener('pointerup', () => { isSwiping = false; });
+        document.addEventListener('pointermove', (e) => {
+            if (isSwiping) checkSlice(e.clientX, e.clientY);
+        });
+
+        function checkSlice(px, py) {
+            if(!isPlaying) return;
+
+            for (let i = 0; i < activeItems.length; i++) {
+                let item = activeItems[i];
+                if (item.sliced) continue;
+
+                let cx = item.x + 45; 
+                let cy = item.y + 45;
+                let dist = Math.hypot(cx - px, cy - py);
+
+                if (dist < 60) { sliceItem(item, i); }
+            }
+        }
+
+        function sliceItem(item, index) {
+            item.sliced = true;
+
+            if (item.isBad) {
+                metrics.bombas++;
+                startTime -= 2500; // Penalización +2.5s
+                
+                let timeDisplay = document.getElementById('actual-time-display');
+                timeDisplay.classList.add('penalty-flash');
+                setTimeout(() => timeDisplay.classList.remove('penalty-flash'), 300);
+
+                let flash = document.getElementById('red-flash');
+                flash.style.display = 'block';
+                setTimeout(() => { flash.style.display = 'none'; }, 200);
+                
+                item.el.remove();
+            } else {
+                item.el.classList.add('sliced-good');
+                setTimeout(() => item.el.remove(), 200);
+
+                document.getElementById(`slot-${currentKitPieces}`).innerHTML = `<img src="${item.src}">`;
+                currentKitPieces++;
+
+                if (currentKitPieces >= 4) { completeKit(); }
+            }
+        }
+
+        // === LÓGICA PRINCIPAL ===
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            isPlaying = true; kitsCompleted = 0; currentKitPieces = 0;
+            metrics = { verdes: 0, rojos: 0, bombas: 0, tiempoTotal: 0 };
+            
+            document.getElementById('kit-count').innerText = kitsCompleted;
+            updateLevelIndicator();
+            clearKitSlots();
+
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 50);
+            
+            requestAnimationFrame(loop);
+            spawnerEngine();
+        }
+
+        function updateTimer() {
+            if(!isPlaying) return;
+            currentActualTime = (Date.now() - startTime) / 1000;
+            document.getElementById('actual-time-display').innerText = `Actual Time: ${currentActualTime.toFixed(2)}s`;
+        }
+
+        function updateLevelIndicator() {
+            let indicator = document.getElementById('level-indicator');
+            if (kitsCompleted < 5) {
+                indicator.innerText = "Línea: NORMAL";
+                indicator.style.color = "white";
+            } else if (kitsCompleted < 10) {
+                indicator.innerText = "Línea: ACELERADA";
+                indicator.style.color = "var(--warning)";
+            } else {
+                indicator.innerText = "Línea: ALTA DEMANDA 🔥";
+                indicator.style.color = "#ff6b6b"; // Rojo suave
+            }
+        }
+
+        function completeKit() {
+            metrics.tiempoTotal += currentActualTime;
+            if (currentActualTime <= 5.0) { metrics.verdes++; } else { metrics.rojos++; }
+
+            kitsCompleted++;
+            document.getElementById('kit-count').innerText = kitsCompleted;
+            updateLevelIndicator();
+
+            if (kitsCompleted >= maxKits) {
+                endGame();
+            } else {
+                currentKitPieces = 0;
+                setTimeout(clearKitSlots, 300); 
+                startTime = Date.now(); 
+            }
+        }
+
+        function clearKitSlots() {
+            for(let i=0; i<4; i++) { document.getElementById(`slot-${i}`).innerHTML = ''; }
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            clearTimeout(spawnInterval);
+
+            activeItems.forEach(i => i.el.remove()); activeItems = [];
+
+            let promedio = (metrics.tiempoTotal / maxKits).toFixed(2);
+
+            document.getElementById('res-verdes').innerText = metrics.verdes;
+            document.getElementById('res-rojos').innerText = metrics.rojos;
+            document.getElementById('res-bombas').innerText = metrics.bombas;
+            document.getElementById('res-promedio').innerText = `${promedio}s`;
+
+            document.getElementById('end-screen').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
