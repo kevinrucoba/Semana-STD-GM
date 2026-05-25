@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reto Takt Time - Edición GM</title>
+    <title>Reto Takt Time - Simulador GM</title>
     <style>
         /* === VARIABLES Y RESET === */
         :root {
@@ -22,215 +22,244 @@
             background: repeating-linear-gradient(0deg, #28a745, #28a745 40px, #218838 40px, #218838 80px);
             margin: 0; padding: 10px; color: #333; height: 100vh;
             display: flex; flex-direction: column; overflow: hidden;
-            touch-action: none; 
+            touch-action: none; /* Previene scroll en la tablet al arrastrar */
         }
 
-        h1 { text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); margin: 0 0 10px 0; font-size: 2rem; text-transform: uppercase; }
+        h1 { text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); margin: 0 0 10px 0; font-size: 1.8rem; text-transform: uppercase; }
 
-        /* === PANEL SUPERIOR === */
+        /* === DASHBOARD SUPERIOR === */
         .dashboard-top {
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(255, 255, 255, 0.95); padding: 10px 20px;
             border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            margin-bottom: 15px; font-size: 1.2rem; font-weight: bold; border: 2px solid var(--gold);
+            margin-bottom: 10px; font-size: 1.2rem; font-weight: bold; border: 2px solid var(--gold);
         }
         .takt-time { color: var(--primary); font-size: 1.5rem; }
         .actual-time { color: var(--danger); font-size: 1.5rem; }
 
-        /* === ÁREA DE JUEGO === */
-        .game-area { display: flex; gap: 15px; flex: 1; height: 100%; }
-        .column { background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 15px; border: 3px solid var(--dark); display: flex; flex-direction: column; align-items: center; }
-        .col-customer { flex: 1; min-width: 250px; }
-        .col-inventory { flex: 1.5; min-width: 300px; }
-        .col-box { flex: 1.5; min-width: 300px; }
+        /* === ÁREA DE JUEGO (3 COLUMNAS) === */
+        .game-area { display: flex; gap: 15px; flex: 1; height: 100%; min-height: 0; }
+        
+        .column { 
+            background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 15px; 
+            border: 3px solid var(--dark); display: flex; flex-direction: column; 
+            align-items: center; overflow: hidden; 
+        }
+        .col-customer { flex: 1; min-width: 200px; max-width: 250px; }
+        .col-inventory { flex: 2; }
+        .col-box { flex: 2; }
+
+        h3 { margin-top: 0; margin-bottom: 10px; color: var(--dark); font-size: 1.2rem; }
 
         /* === COLUMNA CLIENTE === */
-        .customer-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .customer-img { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--gold); background-color: var(--light); object-fit: cover;}
-        .stars { font-size: 1.5rem; color: var(--gold); text-shadow: 1px 1px 2px #000; }
-        .order-bubble { background: var(--light); border: 2px solid #ccc; border-radius: 10px; padding: 15px; width: 100%; text-align: center; position: relative; }
-        .order-items { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-        .order-items img { width: 45px; height: 45px; background: white; border-radius: 5px; border: 1px solid #ddd; padding: 2px; object-fit: contain; }
+        .customer-img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--gold); background-color: var(--light); object-fit: cover;}
+        .order-bubble { 
+            background: var(--light); border: 2px solid #ccc; border-radius: 10px; 
+            padding: 15px; width: 100%; text-align: center; margin-top: 15px;
+        }
+        #error-msg { color: var(--danger); font-weight: bold; margin-top: 10px; height: 20px; text-align: center; }
 
-        @keyframes slideIn { from { transform: translateX(-120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
-        .slide-in { animation: slideIn 0.5s forwards; }
-        .slide-out { animation: slideOut 0.5s forwards; }
+        /* === CUADRÍCULAS ORGANIZADAS (GRIDS) === */
+        .grid-zone { 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; 
+            width: 100%; flex: 1; overflow-y: auto; padding: 5px;
+            background-color: #e9ecef; border: 3px dashed var(--primary); border-radius: 10px;
+            align-content: start; /* Mantiene los items arriba */
+        }
+        
+        .grid-zone.box-zone { border-color: var(--dark); border-style: solid; background-color: #fff; }
+        .grid-zone.active-hover { background-color: #d4edda; border-color: var(--primary); }
 
-        /* === COLUMNA INVENTARIO === */
-        .inventory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; height: 100%; }
-        .drag-item { background: white; border: 3px solid var(--primary); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; cursor: grab; box-shadow: 0 5px 0 var(--dark); touch-action: none; }
-        .drag-item img { width: 80px; height: 80px; object-fit: contain; pointer-events: none; margin-bottom: 5px; }
-        .floating-clone { position: fixed; z-index: 9999; width: 100px; height: 100px; pointer-events: none; transform: translate(-50%, -50%) scale(1.1); filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); object-fit: contain;}
+        /* === PIEZAS ARRASTRABLES === */
+        .drag-item { 
+            background: white; border: 2px solid var(--primary); border-radius: 10px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            padding: 5px; cursor: grab; box-shadow: 0 4px 0 var(--dark); position: relative;
+            touch-action: none; transition: transform 0.1s;
+        }
+        .drag-item:active { box-shadow: 0 0 0 var(--dark); transform: translateY(4px); }
+        .drag-item img { width: 45px; height: 45px; object-fit: contain; pointer-events: none; }
+        
+        /* Número indicador en la esquina */
+        .item-badge {
+            position: absolute; top: -8px; left: -8px; background: var(--primary); color: white;
+            border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; 
+            justify-content: center; font-weight: bold; font-size: 0.8rem; border: 2px solid white;
+        }
 
-        /* === COLUMNA CAJA === */
-        .drop-zone { width: 100%; flex: 1; border: 4px dashed var(--primary); border-radius: 10px; background-color: #e9ecef; margin: 15px 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; transition: background 0.2s; }
-        .drop-zone.active-hover { background-color: #d4edda; border-color: var(--primary); }
-        .drop-zone img { width: 70px; height: 70px; object-fit: contain; animation: pop 0.3s; }
-        @keyframes pop { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
-        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-10px);} 75%{transform:translateX(10px);} }
-        .error-shake { animation: shake 0.4s; border-color: var(--danger); background-color: #f8d7da; }
+        /* Clon flotante para el Drag & Drop */
+        .floating-clone { 
+            position: fixed; z-index: 9999; width: 65px; height: 65px; pointer-events: none; 
+            transform: translate(-50%, -50%) scale(1.1); filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); 
+        }
 
-        .controls { display: flex; width: 100%; gap: 10px; }
+        /* === BOTONES === */
+        .controls { display: flex; width: 100%; gap: 10px; margin-top: 10px; }
         .btn { flex: 1; padding: 15px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; }
         .btn-clear { background: var(--warning); color: #000; }
         .btn-send { background: var(--primary); color: #fff; }
+        .btn:active { transform: scale(0.95); }
+
+        /* Animación de error */
+        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-10px);} 75%{transform:translateX(10px);} }
+        .error-shake { animation: shake 0.4s; border-color: var(--danger) !important; background-color: #f8d7da !important; }
 
         /* === PANTALLAS MODALES === */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
-        .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; border: 5px solid var(--gold); }
-        .modal-muda { background: rgba(220, 53, 69, 0.95); }
-        .modal-muda .modal-content { background: transparent; border: none; color: white; }
-        .start-btn { font-size: 2rem; padding: 20px 40px; background: var(--primary); color: white; border: none; border-radius: 15px; cursor: pointer; }
-        .fix-btn { font-size: 2rem; padding: 20px 40px; background: white; color: var(--danger); border: none; border-radius: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 0 #900; margin-top: 20px;}
-        .fix-btn:active { transform: translateY(5px); box-shadow: none; }
-        .results-table { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 1.2rem; }
-        .results-table th, .results-table td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; border: 5px solid var(--gold); max-width: 90%; }
+        .start-btn { font-size: 2rem; padding: 20px 40px; background: var(--primary); color: white; border: none; border-radius: 15px; cursor: pointer; margin-top: 20px; font-weight: bold;}
+        
+        /* Tabla de resultados */
+        .results-table { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 1.2rem; }
+        .results-table th, .results-table td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
         .results-table th { background: var(--primary); color: white; }
+        .results-table .highlight-row { background-color: #e9ecef; font-weight: bold; }
+        
+        /* Cajas de fórmulas */
+        .formula-box {
+            background: #f8f9fa; border: 2px dashed #ccc; border-radius: 10px;
+            padding: 15px; margin-top: 15px; text-align: left; font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
 
-    <h1>🏆 Línea de Producción GM 🏆</h1>
+    <h1>🏆 Ensamble de Transmisiones GM 🏆</h1>
 
     <div class="dashboard-top">
-        <div>📦 Pedido: <span id="current-customer">0</span> / 10</div>
-        <div class="takt-time">Takt Time: 5.00s</div>
+        <div>📦 Línea Operativa (1 Unidad)</div>
+        <div class="takt-time">Objetivo de Ritmo: Evaluar</div>
         <div class="actual-time">Actual Time: <span id="actual-time">0.00</span>s</div>
     </div>
 
     <div class="game-area">
         
-        <!-- 1. COLUMNA CLIENTE -->
-        <div class="column col-customer" id="customer-wrapper">
-            <div class="customer-header">
-                <img id="customer-img" src="" alt="Avatar" class="customer-img">
-                <div class="stars" id="customer-stars">⭐⭐⭐</div>
-            </div>
+        <div class="column col-customer">
+            <h3>Cliente GM</h3>
+            <img src="img/RamonFranco.jpg" alt="Cliente" class="customer-img">
             <div class="order-bubble">
-                <strong style="font-size: 1.2rem; color: var(--dark);">"¡Quiero esto!"</strong>
-                <div class="order-items" id="order-items"></div>
+                <strong style="color: var(--dark);">Instrucción Estándar:</strong>
+                <p style="font-size: 1rem; margin: 10px 0;">Ensambla la transmisión completa arrastrando las <strong>20 piezas en orden exacto</strong> (del 1 al 20) hacia la caja.</p>
             </div>
-            <div id="error-msg" style="color: var(--danger); font-weight: bold; margin-top: 15px; height: 20px;"></div>
+            <div id="error-msg"></div>
         </div>
 
-        <!-- 2. COLUMNA INVENTARIO (PIEZAS PARA ARRASTRAR) -->
-        <!-- 👇 CAMBIO DE IMÁGENES 1 DE 2: BOTONES DEL INVENTARIO 👇 -->
         <div class="column col-inventory">
-            <h3 style="margin-top:0; color: var(--dark);">Arrastra las piezas ➡️</h3>
-            <div class="inventory-grid">
-                
-                <!-- PLAYERA -->
-                <div class="drag-item" data-part="playera" data-src="img/playera.png">
-                    <img src="img/playera.png" alt="Playera"> Playera
-                </div>
-                
-                <!-- SHORT -->
-                <div class="drag-item" data-part="short" data-src="img/short.png">
-                    <img src="img/short.png" alt="Short"> Short
-                </div>
-                
-                <!-- TACHONES -->
-                <div class="drag-item" data-part="tachones" data-src="img/tachones.png">
-                    <img src="img/tachones.png" alt="Tachones"> Tachones
-                </div>
-                
-                <!-- BALÓN -->
-                <div class="drag-item" data-part="balon" data-src="img/balon.png">
-                    <img src="img/balon.png" alt="Balón"> Balón
-                </div>
-
-            </div>
+            <h3>Inventario de Piezas (Desordenado)</h3>
+            <div class="grid-zone" id="inventory-grid"></div>
         </div>
-        <!-- ☝️ FIN CAMBIO DE IMÁGENES 1 DE 2 ☝️ -->
 
-        <!-- 3. COLUMNA CAJA -->
         <div class="column col-box">
-            <h3 style="margin-top:0; color: var(--dark);">Caja de Empaque</h3>
-            <div class="drop-zone" id="box"></div>
+            <h3>Banda de Ensamble (Orden 1 al 20)</h3>
+            <div class="grid-zone box-zone" id="box-grid"></div>
             <div class="controls">
-                <button class="btn btn-clear" onclick="clearBox()">🗑️ Vaciar</button>
-                <button class="btn btn-send" onclick="sendKit()">Entregar 🚚</button>
+                <button class="btn btn-clear" onclick="clearBox()">🗑️ Regresar Piezas</button>
+                <button class="btn btn-send" onclick="sendKit()">Entregar Unidad 🚚</button>
             </div>
         </div>
     </div>
 
-    <!-- PANTALLAS MODALES -->
     <div class="modal" id="start-screen" style="display: flex;">
         <div class="modal-content" style="background: transparent; border: none;">
-            <h1 style="font-size: 3.5rem;">Simulador Takt Time</h1>
-            <p style="font-size: 1.5rem; color: white;">Atiende 10 pedidos arrastrando los productos correctos.<br>¡Cuidado con los paros de línea!</p>
-            <button class="start-btn" onclick="startGame()">▶️ INICIAR</button>
+            <h1 style="font-size: 3.5rem; color: white;">Ejercicio Takt Time y ATT</h1>
+            <p style="font-size: 1.5rem; color: #e9ecef;">
+                Demanda: 108 transmisiones<br>
+                Tiempo Disponible: 3600 segundos<br>
+                <strong>Arma la transmisión lo más rápido y ordenado posible.</strong>
+            </p>
+            <button class="start-btn" onclick="startGame()">▶️ INICIAR PRODUCCIÓN</button>
         </div>
     </div>
-    <div class="modal modal-muda" id="delay-overlay">
-        <div class="modal-content">
-            <h2 style="font-size: 4rem; margin:0;">⚠️ PARO DE LÍNEA ⚠️</h2>
-            <p style="font-size: 1.5rem;">Falla en equipo. Presiona rápido para reparar.</p>
-            <button class="fix-btn" id="fix-btn" onclick="fixMachine()">Reparar (3)</button>
-        </div>
-    </div>
+
     <div class="modal" id="end-screen">
         <div class="modal-content">
-            <h2>📊 Dashboard de Resultados</h2>
+            <h2 style="font-size: 2.5rem; margin-top: 0; color: var(--dark);">📊 Ejercicio de Estandarización</h2>
+            <p style="font-size: 1.2rem; color: #555;">¡Unidad ensamblada! Utiliza las variables de la planta para calcular el TT y ATT.</p>
+            
             <table class="results-table">
-                <tr><th>Métrica Lean</th><th>Resultado</th></tr>
-                <tr><td>Pedidos Exitosos (< 5.00s)</td><td id="res-verdes">0</td></tr>
-                <tr><td>Pedidos Atrasados (> 5.00s)</td><td id="res-rojos">0</td></tr>
-                <tr><td>Retrabajos (Cajas incorrectas)</td><td id="res-defectos">0</td></tr>
-                <tr><td>Paros de Línea (Muda)</td><td id="res-paros">0</td></tr>
+                <tr>
+                    <th>Variable</th>
+                    <th>Valor para el Cálculo</th>
+                </tr>
+                <tr>
+                    <td><strong>Tiempo Disponible</strong></td>
+                    <td>3600 segundos</td>
+                </tr>
+                <tr>
+                    <td><strong>Demanda del Cliente</strong></td>
+                    <td>108 transmisiones</td>
+                </tr>
+                <tr>
+                    <td><strong>Capacidad Real (Histórico)</strong></td>
+                    <td>90 transmisiones</td>
+                </tr>
+                <tr>
+                    <td><strong>Eficiencia / OEE</strong></td>
+                    <td>90% (0.90)</td>
+                </tr>
+                <tr class="highlight-row">
+                    <td style="text-align: right; color: var(--danger);">TU TIEMPO DE ENSAMBLE (Actual Time):</td>
+                    <td style="color: var(--danger); font-size: 1.5rem;" id="res-tiempo">0.00 s</td>
+                </tr>
             </table>
-            <button class="btn btn-send" style="margin-top: 20px;" onclick="location.reload()">Reiniciar Simulador</button>
+
+            <div class="formula-box">
+                <p><strong>Fórmula TT:</strong> (Tiempo Disponible) / (Demanda del Cliente) = <strong>______ s</strong></p>
+                <p><strong>Fórmula ATT:</strong> (Tiempo Disponible / Capacidad Real) × Eficiencia = <strong>______ s</strong></p>
+            </div>
+
+            <h3 id="mensaje-final" style="margin-top: 20px; font-size: 1.3rem;">Compara tu tiempo de ensamble con los resultados que calculaste. ¿Fuiste un cuello de botella?</h3>
+            <button class="start-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="location.reload()">Repetir Ejercicio</button>
         </div>
     </div>
 
     <script>
-        // 👇 CAMBIO DE IMÁGENES 2 DE 2: EL CATÁLOGO (GLOBO DE PENSAMIENTO) 👇
-        const catalog = {
-            'playera': 'img/playera.png',
-            'short': 'img/short.png',
-            'tachones': 'img/tachones.png',
-            'balon': 'img/balon.png'
-        };
-        const allItems = Object.keys(catalog);
-        // ☝️ FIN CAMBIO DE IMÁGENES 2 DE 2 ☝️
+        // === GENERADOR DE 20 PIEZAS ===
+        const imgPaths = ['img/playera.png', 'img/short.png', 'img/tachones.png', 'img/balon.png'];
+        const totalPiezas = 20;
+        
+        let startTime, timerInterval;
+        let isPlaying = false;
 
+        // Inicializar piezas revueltas en el inventario
+        function initInventory() {
+            let inventoryGrid = document.getElementById('inventory-grid');
+            let piezas = [];
+            
+            for(let i = 1; i <= totalPiezas; i++) {
+                let div = document.createElement('div');
+                div.className = 'drag-item';
+                div.dataset.id = i; 
+                div.innerHTML = `
+                    <div class="item-badge">${i}</div>
+                    <img src="${imgPaths[(i-1) % 4]}" alt="Pieza ${i}">
+                `;
+                div.addEventListener('pointerdown', startDrag);
+                piezas.push(div);
+            }
 
-        // 👇 CAMBIO DE IMÁGENES DE CLIENTES: ROSTROS / AVATARES 👇
-        // Puedes poner tantas imágenes como quieras, separadas por comas.
-        const avataresClientes = [
-            'img/RamonFranco.jpg',
-            'img/chuy.jpg',
-            'img/lamar.jpg'
-        ];
-        // ☝️ FIN CAMBIO DE IMÁGENES DE CLIENTES ☝️
+            piezas.sort(() => Math.random() - 0.5);
+            piezas.forEach(p => inventoryGrid.appendChild(p));
+        }
 
+        initInventory();
 
-        // === VARIABLES GLOBALES ===
-        let currentCustomer = 0; const maxCustomers = 10;
-        let isPlaying = false, isPaused = false;
-        let requiredOrder = [], currentKit = [];
-        let startTime, timerInterval, obstacleInterval;
-        let metrics = { verdes: 0, rojos: 0, defectos: 0, paros: 0 };
-        let fixClicksNeeded = 0;
-
-        // === DRAG & DROP ===
-        let activeClone = null; let activePart = null;
-        const boxZone = document.getElementById('box');
-
-        document.querySelectorAll('.drag-item').forEach(item => {
-            item.addEventListener('pointerdown', startDrag);
-        });
+        // === MOTOR DRAG & DROP (PERMITE REORDENAR) ===
+        let activeItem = null; 
+        let activeClone = null;
 
         function startDrag(e) {
-            if (!isPlaying || isPaused) return;
-            activePart = this.dataset.part;
-            activeClone = document.createElement('img');
-            activeClone.src = this.dataset.src;
+            if (!isPlaying) return;
+            activeItem = this;
+            activeItem.style.opacity = '0.3';
+
+            activeClone = activeItem.cloneNode(true);
             activeClone.classList.add('floating-clone');
+            activeClone.style.opacity = '1';
             activeClone.style.left = e.clientX + 'px';
             activeClone.style.top = e.clientY + 'px';
             document.body.appendChild(activeClone);
+
             document.addEventListener('pointermove', moveDrag);
             document.addEventListener('pointerup', endDrag);
         }
@@ -239,114 +268,105 @@
             if (!activeClone) return;
             activeClone.style.left = e.clientX + 'px';
             activeClone.style.top = e.clientY + 'px';
-            let boxRect = boxZone.getBoundingClientRect();
-            if (e.clientX >= boxRect.left && e.clientX <= boxRect.right && e.clientY >= boxRect.top && e.clientY <= boxRect.bottom) {
-                boxZone.classList.add('active-hover');
-            } else { boxZone.classList.remove('active-hover'); }
         }
 
         function endDrag(e) {
             document.removeEventListener('pointermove', moveDrag);
             document.removeEventListener('pointerup', endDrag);
             if (!activeClone) return;
-            let boxRect = boxZone.getBoundingClientRect();
-            if (e.clientX >= boxRect.left && e.clientX <= boxRect.right && e.clientY >= boxRect.top && e.clientY <= boxRect.bottom) {
-                addToBox(activePart, activeClone.src);
+
+            activeClone.remove();
+            activeClone = null;
+            activeItem.style.opacity = '1';
+
+            let els = document.elementsFromPoint(e.clientX, e.clientY);
+            let boxZone = els.find(el => el.id === 'box-grid');
+            let inventoryZone = els.find(el => el.id === 'inventory-grid');
+            let targetItem = els.find(el => el.classList.contains('drag-item') && el !== activeItem && el.parentNode.id === 'box-grid');
+
+            if (boxZone) {
+                if (targetItem) {
+                    boxZone.insertBefore(activeItem, targetItem);
+                } else {
+                    boxZone.appendChild(activeItem);
+                }
+            } else if (inventoryZone) {
+                inventoryZone.appendChild(activeItem);
+                reordenarInventario(); 
             }
-            boxZone.classList.remove('active-hover');
-            activeClone.remove(); activeClone = null; activePart = null;
-        }
-
-        function addToBox(part, src) {
+            
             document.getElementById('error-msg').innerText = ''; 
-            boxZone.classList.remove('error-shake');
-            currentKit.push(part);
-            let img = document.createElement('img'); img.src = src; boxZone.appendChild(img);
+            document.getElementById('box-grid').classList.remove('error-shake');
+            activeItem = null;
         }
 
-        // === LÓGICA JUEGO ===
-        function startGame() {
-            document.getElementById('start-screen').style.display = 'none';
-            isPlaying = true; nextCustomer();
-            obstacleInterval = setInterval(randomObstacle, 6000);
+        function reordenarInventario() {
+            let inv = document.getElementById('inventory-grid');
+            let items = Array.from(inv.children);
+            items.sort((a, b) => parseInt(a.dataset.id) - parseInt(b.dataset.id));
+            items.forEach(item => inv.appendChild(item));
         }
 
-        function nextCustomer() {
-            if (currentCustomer >= maxCustomers) { endGame(); return; }
-            let wrapper = document.getElementById('customer-wrapper');
-            wrapper.classList.remove('slide-out'); void wrapper.offsetWidth; wrapper.classList.add('slide-in');
-
-            currentCustomer++;
-            document.getElementById('current-customer').innerText = currentCustomer;
-            
-            // SELECCIÓN ALEATORIA DE TUS AVATARES
-            let avatarElegido = avataresClientes[Math.floor(Math.random() * avataresClientes.length)];
-            document.getElementById('customer-img').src = avatarElegido;
-            
-            document.getElementById('customer-stars').innerText = "⭐⭐⭐";
-            generateOrder(); clearBox();
-            startTime = Date.now();
-            if(!timerInterval) timerInterval = setInterval(updateTimer, 50);
-        }
-
-        function generateOrder() {
-            let shuffled = allItems.sort(() => 0.5 - Math.random());
-            let numItems = Math.floor(Math.random() * 3) + 2; 
-            requiredOrder = shuffled.slice(0, numItems);
-            let orderHtml = '';
-            requiredOrder.forEach(item => { orderHtml += `<img src="${catalog[item]}" alt="${item}">`; });
-            document.getElementById('order-items').innerHTML = orderHtml;
-        }
-
-        function updateTimer() {
-            if (isPaused) return; 
-            let currentTime = (Date.now() - startTime) / 1000;
-            document.getElementById('actual-time').innerText = currentTime.toFixed(2);
-            let starsEl = document.getElementById('customer-stars');
-            if(currentTime > 9) { starsEl.innerText = "😠"; }
-            else if(currentTime > 7) { starsEl.innerText = "⭐"; }
-            else if(currentTime > 5) { starsEl.innerText = "⭐⭐"; }
-        }
-
+        // === BOTONES DE CONTROL ===
         function clearBox() {
-            currentKit = []; boxZone.innerHTML = ''; document.getElementById('error-msg').innerText = '';
+            let box = document.getElementById('box-grid');
+            let inv = document.getElementById('inventory-grid');
+            while (box.firstChild) {
+                inv.appendChild(box.firstChild);
+            }
+            reordenarInventario();
+            document.getElementById('error-msg').innerText = '';
+            box.classList.remove('error-shake');
         }
 
         function sendKit() {
-            if(!isPlaying || isPaused || currentKit.length === 0) return;
-            let sortedReq = [...requiredOrder].sort().join(','); let sortedKit = [...currentKit].sort().join(',');
-            if (sortedReq !== sortedKit) {
-                document.getElementById('error-msg').innerText = "❌ ¡Pedido Incorrecto!";
-                boxZone.classList.remove('error-shake'); void boxZone.offsetWidth; boxZone.classList.add('error-shake');
-                metrics.defectos++; setTimeout(clearBox, 800); return;
+            let itemsInBox = Array.from(document.getElementById('box-grid').children);
+            let errorMsg = document.getElementById('error-msg');
+            let boxGrid = document.getElementById('box-grid');
+
+            if (itemsInBox.length < totalPiezas) {
+                errorMsg.innerText = `❌ Incompleto: Tienes ${itemsInBox.length} de 20 piezas.`;
+                boxGrid.classList.remove('error-shake'); void boxGrid.offsetWidth; boxGrid.classList.add('error-shake');
+                return;
             }
-            let endTime = (Date.now() - startTime) / 1000;
-            if (endTime <= 5.0) metrics.verdes++; else metrics.rojos++;
-            let wrapper = document.getElementById('customer-wrapper');
-            wrapper.classList.remove('slide-in'); wrapper.classList.add('slide-out');
-            clearInterval(timerInterval); timerInterval = null; setTimeout(nextCustomer, 500); 
-        }
 
-        function randomObstacle() {
-            if (isPlaying && !isPaused && Math.random() < 0.3) {
-                isPaused = true; metrics.paros++;
-                document.getElementById('delay-overlay').style.display = 'flex';
-                fixClicksNeeded = 3; document.getElementById('fix-btn').innerText = `Reparar (${fixClicksNeeded})`;
+            let ordenCorrecto = true;
+            for (let i = 0; i < totalPiezas; i++) {
+                if (parseInt(itemsInBox[i].dataset.id) !== (i + 1)) {
+                    ordenCorrecto = false;
+                    break;
+                }
             }
+
+            if (!ordenCorrecto) {
+                errorMsg.innerText = "❌ Orden Incorrecto. ¡Puedes arrastrarlas dentro de la caja para reacomodarlas!";
+                boxGrid.classList.remove('error-shake'); void boxGrid.offsetWidth; boxGrid.classList.add('error-shake');
+                return;
+            }
+
+            clearInterval(timerInterval);
+            mostrarResultados();
         }
 
-        function fixMachine() {
-            fixClicksNeeded--;
-            if (fixClicksNeeded > 0) { document.getElementById('fix-btn').innerText = `Reparar (${fixClicksNeeded})`; } 
-            else { document.getElementById('delay-overlay').style.display = 'none'; isPaused = false; startTime += 500; }
+        // === RELOJ Y LÓGICA GENERAL ===
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            isPlaying = true;
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 50);
         }
 
-        function endGame() {
-            isPlaying = false; clearInterval(timerInterval); clearInterval(obstacleInterval);
-            document.getElementById('res-verdes').innerText = metrics.verdes;
-            document.getElementById('res-rojos').innerText = metrics.rojos;
-            document.getElementById('res-defectos').innerText = metrics.defectos;
-            document.getElementById('res-paros').innerText = metrics.paros;
+        function updateTimer() {
+            let currentTime = (Date.now() - startTime) / 1000;
+            let timeDisplay = document.getElementById('actual-time');
+            timeDisplay.innerText = currentTime.toFixed(2);
+            
+            // Ya no cambiamos de color aquí porque no queremos revelar el TT antes de que lo calculen.
+        }
+
+        function mostrarResultados() {
+            let tiempoFinal = ((Date.now() - startTime) / 1000).toFixed(2);
+            document.getElementById('res-tiempo').innerText = tiempoFinal + " s";
             document.getElementById('end-screen').style.display = 'flex';
         }
     </script>
