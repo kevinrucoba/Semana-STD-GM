@@ -5,6 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Reto Takt Time - Simulador GM</title>
     <style>
+        /* === AJUSTES RESPONSIVE SIN TOCAR LÓGICA === */
+        :root {
+            --primary: #007A33;
+            --dark: #00441b;
+            --light: #f8f9fa;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --gold: #FFD700;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; /* Esto evita que la tablet se mueva */
+            touch-action: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: repeating-linear-gradient(0deg, #28a745, #28a745 40px, #218838 40px, #218838 80px);
+            display: flex; flex-direction: column;
+            /* Escala el contenido si la pantalla es muy pequeña */
+            transform-origin: top center;
+        }
+
+        /* Contenedor principal que se adapta */
+        .main-wrapper {
+            width: 100vw; height: 100vh;
+            display: flex; flex-direction: column;
+            padding: 10px;
+        }
         /* === VARIABLES Y RESET === */
         :root {
             --primary: #007A33;
@@ -22,10 +54,10 @@
             background: repeating-linear-gradient(0deg, #28a745, #28a745 40px, #218838 40px, #218838 80px);
             margin: 0; padding: 10px; color: #333; height: 100vh;
             display: flex; flex-direction: column; overflow: hidden;
-            touch-action: none; /* Previene scroll en la tablet al arrastrar */
+            touch-action: none; 
         }
 
-        h1 { text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); margin: 0 0 10px 0; font-size: 1.8rem; text-transform: uppercase; }
+        h1 { text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); margin: 0 0 10px 0; font-size: 1.5rem; text-transform: uppercase; }
 
         /* === DASHBOARD SUPERIOR === */
         .dashboard-top {
@@ -37,89 +69,145 @@
         .takt-time { color: var(--primary); font-size: 1.5rem; }
         .actual-time { color: var(--danger); font-size: 1.5rem; }
 
-        /* === ÁREA DE JUEGO (3 COLUMNAS) === */
-        .game-area { display: flex; gap: 15px; flex: 1; height: 100%; min-height: 0; }
+        /* === FILA DE CLIENTES (KANBAN / WIP) === */
+        .queue-container {
+            display: flex; overflow-x: hidden; gap: 10px; padding: 10px;
+            background: rgba(255, 255, 255, 0.95); border-radius: 10px;
+            border: 3px solid var(--dark); margin-bottom: 10px; min-height: 130px;
+            align-items: flex-end; position: relative;
+        }
+        .queue-title {
+            position: absolute; top: 5px; left: 10px; font-weight: bold; color: var(--dark);
+        }
+        .customer-card {
+            display: flex; flex-direction: column; align-items: center; min-width: 70px;
+            animation: slideInRight 0.3s ease-out; position: relative;
+        }
+        @keyframes slideInRight { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        .customer-avatar { width: 55px; height: 55px; border-radius: 50%; border: 3px solid var(--primary); object-fit: cover; }
+        .customer-card.angry .customer-avatar { border-color: var(--danger); animation: shake 0.5s infinite; }
+        
+        .speech-bubble {
+            background: white; border: 2px solid #ccc; border-radius: 10px; padding: 5px; 
+            margin-bottom: 5px; position: relative; display: flex; align-items: center; justify-content: center;
+        }
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+            border-width: 8px 6px 0; border-style: solid; border-color: #ccc transparent transparent transparent;
+        }
+        .speech-bubble img { width: 35px; height: 35px; object-fit: contain; }
+
+        /* === ÁREA DE JUEGO === */
+        .game-area { display: flex; gap: 15px; flex: 1; min-height: 0; }
         
         .column { 
-            background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 15px; 
+            background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 10px; 
             border: 3px solid var(--dark); display: flex; flex-direction: column; 
-            align-items: center; overflow: hidden; 
+            overflow: hidden;
         }
-        .col-customer { flex: 1; min-width: 200px; max-width: 250px; }
-        .col-inventory { flex: 2; }
-        .col-box { flex: 2; }
+        .col-inventory { flex: 1.2; }
+        .col-box { flex: 1.8; justify-content: center; }
 
-        h3 { margin-top: 0; margin-bottom: 10px; color: var(--dark); font-size: 1.2rem; }
+        h3 { margin-top: 0; margin-bottom: 10px; color: var(--dark); font-size: 1.1rem; text-align: center; }
 
-        /* === COLUMNA CLIENTE === */
-        .customer-img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--gold); background-color: var(--light); object-fit: cover;}
-        .order-bubble { 
-            background: var(--light); border: 2px solid #ccc; border-radius: 10px; 
-            padding: 15px; width: 100%; text-align: center; margin-top: 15px;
-        }
-        #error-msg { color: var(--danger); font-weight: bold; margin-top: 10px; height: 20px; text-align: center; }
-
-        /* === CUADRÍCULAS ORGANIZADAS (GRIDS) === */
+        /* === INVENTARIO === */
         .grid-zone { 
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; 
-            width: 100%; flex: 1; overflow-y: auto; padding: 5px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
+            width: 100%; flex: 1; overflow-y: auto; padding: 10px;
             background-color: #e9ecef; border: 3px dashed var(--primary); border-radius: 10px;
-            align-content: start; /* Mantiene los items arriba */
+            align-content: start; 
         }
-        
-        .grid-zone.box-zone { border-color: var(--dark); border-style: solid; background-color: #fff; }
-        .grid-zone.active-hover { background-color: #d4edda; border-color: var(--primary); }
 
-        /* === PIEZAS ARRASTRABLES === */
         .drag-item { 
             background: white; border: 2px solid var(--primary); border-radius: 10px; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            padding: 5px; cursor: grab; box-shadow: 0 4px 0 var(--dark); position: relative;
+            padding: 8px; cursor: grab; box-shadow: 0 4px 0 var(--dark); position: relative;
             touch-action: none; transition: transform 0.1s;
         }
         .drag-item:active { box-shadow: 0 0 0 var(--dark); transform: translateY(4px); }
-        .drag-item img { width: 45px; height: 45px; object-fit: contain; pointer-events: none; }
-        
-        /* Número indicador en la esquina */
-        .item-badge {
-            position: absolute; top: -8px; left: -8px; background: var(--primary); color: white;
-            border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; 
-            justify-content: center; font-weight: bold; font-size: 0.8rem; border: 2px solid white;
-        }
+        .drag-item img { width: 50px; height: 50px; object-fit: contain; pointer-events: none; }
 
-        /* Clon flotante para el Drag & Drop */
         .floating-clone { 
-            position: fixed; z-index: 9999; width: 65px; height: 65px; pointer-events: none; 
+            position: fixed; z-index: 9999; width: 70px; height: 70px; pointer-events: none; 
             transform: translate(-50%, -50%) scale(1.1); filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5)); 
         }
 
-        /* === BOTONES === */
-        .controls { display: flex; width: 100%; gap: 10px; margin-top: 10px; }
-        .btn { flex: 1; padding: 15px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; }
-        .btn-clear { background: var(--warning); color: #000; }
-        .btn-send { background: var(--primary); color: #fff; }
-        .btn:active { transform: scale(0.95); }
+        #error-msg { color: var(--danger); font-weight: bold; height: 20px; text-align: center; margin-bottom: 5px; font-size: 1.2rem;}
 
-        /* Animación de error */
-        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-10px);} 75%{transform:translateX(10px);} }
+        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
         .error-shake { animation: shake 0.4s; border-color: var(--danger) !important; background-color: #f8d7da !important; }
+
+        /* === BANDA TRANSPORTADORA Y CAJA === */
+        .factory-line {
+            display: flex; align-items: center; width: 100%; height: 200px;
+            background: #dcdcdc; border: 3px solid var(--dark); border-radius: 10px;
+            padding: 15px 30px 15px 15px; position: relative; overflow: visible;
+        }
+        
+        .belt-container {
+            flex: 1; height: 100px; background: #333; position: relative;
+            border: 5px solid #555; border-radius: 5px; margin-right: -15px; z-index: 1;
+            box-shadow: inset 0 10px 15px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.3);
+        }
+        
+        .conveyor-belt {
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(90deg, #222, #222 30px, #3a3a3a 30px, #3a3a3a 60px);
+            animation: beltMove 1.5s linear infinite;
+        }
+
+        .conveyor-belt.paused { animation-play-state: paused; }
+        @keyframes beltMove { 0% { background-position: 0 0; } 100% { background-position: 60px 0; } }
+
+        .packaging-box {
+            width: 130px; height: 130px; background: #a67c52; border: 4px solid #5e4023;
+            border-radius: 5px; position: relative; z-index: 2;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: -5px 10px 15px rgba(0,0,0,0.5);
+        }
+        .flap-back { 
+            position: absolute; top: -24px; left: -4px; width: 100%; height: 24px; 
+            background: #c29562; border: 4px solid #5e4023; 
+            transform: skewX(-20deg); transform-origin: bottom left; 
+        }
+        
+        .box-title { color: white; font-weight: bold; font-size: 1rem; margin-bottom: 5px; text-shadow: 1px 1px 2px #000; }
+        .box-count { font-size: 2.5rem; font-weight: bold; color: white; text-shadow: 2px 2px 4px #000; }
+
+        .belt-item {
+            position: absolute; top: 10px; left: -70px; width: 70px; height: 70px;
+            background: white; border: 3px solid var(--primary); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            animation: moveRight 1.5s linear forwards;
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.5);
+        }
+        .belt-item img { width: 55px; height: 55px; object-fit: contain; }
+        
+        @keyframes moveRight {
+            0% { left: 0px; transform: scale(1) translateY(0); opacity: 1; }
+            70% { left: calc(100% - 30px); transform: scale(1) translateY(0); opacity: 1; }
+            100% { left: calc(100% + 40px); transform: scale(0.4) translateY(60px); opacity: 0; } 
+        }
 
         /* === PANTALLAS MODALES === */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
         .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; border: 5px solid var(--gold); max-width: 90%; }
-        .start-btn { font-size: 2rem; padding: 20px 40px; background: var(--primary); color: white; border: none; border-radius: 15px; cursor: pointer; margin-top: 20px; font-weight: bold;}
         
-        /* Tabla de resultados */
-        .results-table { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 1.2rem; }
-        .results-table th, .results-table td { padding: 12px; border-bottom: 1px solid #ddd; text-align: center; }
+        /* Ajustes Modal de Inicio */
+        .modal-inicio { background: rgba(255, 255, 255, 0.95); border: 5px solid var(--gold); color: var(--dark); max-width: 800px; text-align: left; }
+        
+        .start-btn { font-size: 1.5rem; padding: 15px 30px; background: var(--primary); color: white; border: none; border-radius: 15px; cursor: pointer; margin-top: 20px; font-weight: bold; width: 100%; text-transform: uppercase;}
+        .start-btn:active { transform: scale(0.98); }
+        .fix-btn { font-size: 2rem; padding: 20px 40px; background: white; color: var(--danger); border: none; border-radius: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 0 #900; margin-top: 20px;}
+        .fix-btn:active { transform: translateY(5px); box-shadow: none; }
+
+        .results-table { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 1.1rem; }
+        .results-table th, .results-table td { padding: 10px; border-bottom: 1px solid #ddd; text-align: center; }
         .results-table th { background: var(--primary); color: white; }
         .results-table .highlight-row { background-color: #e9ecef; font-weight: bold; }
         
-        /* Cajas de fórmulas */
-        .formula-box {
-            background: #f8f9fa; border: 2px dashed #ccc; border-radius: 10px;
-            padding: 15px; margin-top: 15px; text-align: left; font-size: 1.2rem;
-        }
+        .formula-box { background: #f8f9fa; border: 2px dashed #ccc; border-radius: 10px; padding: 15px; margin-top: 15px; text-align: left; font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -128,128 +216,164 @@
 
     <div class="dashboard-top">
         <div>📦 Línea Operativa (1 Unidad)</div>
-        <div class="takt-time">Objetivo de Ritmo: Evaluar</div>
-        <div class="actual-time">Actual Time: <span id="actual-time">0.00</span>s</div>
+        <div class="takt-time">Objetivo TT: 33.3s</div>
+        <div class="actual-time">Tiempo: <span id="actual-time">0.00</span>s</div>
     </div>
 
+    <div class="queue-container" id="customer-queue">
+        <div class="queue-title">Pedidos Entrantes (WIP)</div>
+    </div>
+    
     <div class="game-area">
-        
-        <div class="column col-customer">
-            <h3>Cliente GM</h3>
-            <img src="img/RamonFranco.jpg" alt="Cliente" class="customer-img">
-            <div class="order-bubble">
-                <strong style="color: var(--dark);">Instrucción Estándar:</strong>
-                <p style="font-size: 1rem; margin: 10px 0;">Ensambla la transmisión completa arrastrando las <strong>20 piezas en orden exacto</strong> (del 1 al 20) hacia la caja.</p>
-            </div>
-            <div id="error-msg"></div>
-        </div>
-
         <div class="column col-inventory">
-            <h3>Inventario de Piezas (Desordenado)</h3>
+            <h3>Inventario de Piezas</h3>
             <div class="grid-zone" id="inventory-grid"></div>
         </div>
 
         <div class="column col-box">
-            <h3>Banda de Ensamble (Orden 1 al 20)</h3>
-            <div class="grid-zone box-zone" id="box-grid"></div>
-            <div class="controls">
-                <button class="btn btn-clear" onclick="clearBox()">🗑️ Regresar Piezas</button>
-                <button class="btn btn-send" onclick="sendKit()">Entregar Unidad 🚚</button>
+            <h3>Banda Transportadora y Empaque</h3>
+            <div id="error-msg">Arrastra la pieza solicitada a la banda...</div>
+            
+            <div class="factory-line" id="factory-dropzone">
+                <div class="belt-container">
+                    <div class="conveyor-belt" id="conveyor-surface"></div>
+                    <div id="items-on-belt"></div> 
+                </div>
+                
+                <div class="packaging-box">
+                    <div class="flap-back"></div>
+                    <div class="box-title">Transmisión</div>
+                    <div class="box-count"><span id="box-counter">0</span>/20</div>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="modal" id="start-screen" style="display: flex;">
-        <div class="modal-content" style="background: transparent; border: none;">
-            <h1 style="font-size: 3.5rem; color: white;">Ejercicio Takt Time y ATT</h1>
-            <p style="font-size: 1.5rem; color: #e9ecef;">
-                Demanda: 108 transmisiones<br>
-                Tiempo Disponible: 3600 segundos<br>
-                <strong>Arma la transmisión lo más rápido y ordenado posible.</strong>
-            </p>
+        <div class="modal-content modal-inicio">
+            <h1 style="font-size: 2.8rem; color: var(--primary); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); margin-top: 0; text-align: center;">⚽ ¡Arma tu Transmisión Mundialista! ⚙️</h1>
+            
+            <div style="font-size: 1.2rem; line-height: 1.6; color: #333; margin: 20px 0;">
+                <p>Tu misión en esta línea operativa es lograr el ensamble perfecto manteniendo el ritmo de la planta.</p>
+                
+                <ul style="list-style-type: none; padding-left: 0;">
+                    <li style="margin-bottom: 12px;">📦 <strong>La Misión:</strong> Empaca las <strong>20 piezas</strong> en la banda transportadora para armar la transmisión.</li>
+                    <li style="margin-bottom: 12px;">📋 <strong>El Estándar:</strong> Arrastra las piezas <strong>exactamente en el orden</strong> en el que van llegando los pedidos a la fila superior (Pedidos Entrantes).</li>
+                    <li style="margin-bottom: 12px;">⚠️ <strong>Cuidado con los Paros:</strong> Si la máquina falla, repárala rápido. ¡La línea se detiene, pero el reloj y los pedidos siguen acumulándose!</li>
+                    <li>⏱️ <strong>El Objetivo Final:</strong> Al terminar de empacar las 20 piezas, detendremos el reloj para ver si tu ensamble logró ganarle al <strong>tiempo calculado (Takt Time)</strong>.</li>
+                </ul>
+            </div>
+            
             <button class="start-btn" onclick="startGame()">▶️ INICIAR PRODUCCIÓN</button>
+        </div>
+    </div>
+
+    <div class="modal" id="delay-overlay" style="background: rgba(220, 53, 69, 0.95);">
+        <div class="modal-content" style="background: transparent; border: none; color: white;">
+            <h2 style="font-size: 4rem; margin:0;">⚠️ PARO DE LÍNEA ⚠️</h2>
+            <p style="font-size: 1.5rem;">Falla en el equipo. ¡El reloj y los pedidos siguen corriendo! Repara la máquina rápido.</p>
+            <button class="fix-btn" id="fix-btn" onclick="fixMachine()">Reparar (3)</button>
         </div>
     </div>
 
     <div class="modal" id="end-screen">
         <div class="modal-content">
-            <h2 style="font-size: 2.5rem; margin-top: 0; color: var(--dark);">📊 Ejercicio de Estandarización</h2>
-            <p style="font-size: 1.2rem; color: #555;">¡Unidad ensamblada! Utiliza las variables de la planta para calcular el TT y ATT.</p>
+            <h2 style="font-size: 2rem; margin-top: 0; color: var(--dark);">📊 Análisis de Estandarización</h2>
+            <p style="font-size: 1.1rem; color: #555;">¡Unidad empacada con éxito! Vamos a comparar el ritmo que sacaste con el de la planta. Ayúdanos a calcular el TT y el ATT usando estas variables:</p>
             
             <table class="results-table">
-                <tr>
-                    <th>Variable</th>
-                    <th>Valor para el Cálculo</th>
-                </tr>
-                <tr>
-                    <td><strong>Tiempo Disponible</strong></td>
-                    <td>3600 segundos</td>
-                </tr>
-                <tr>
-                    <td><strong>Demanda del Cliente</strong></td>
-                    <td>108 transmisiones</td>
-                </tr>
-                <tr>
-                    <td><strong>Capacidad Real (Histórico)</strong></td>
-                    <td>90 transmisiones</td>
-                </tr>
-                <tr>
-                    <td><strong>Eficiencia / OEE</strong></td>
-                    <td>90% (0.90)</td>
-                </tr>
+                <tr><th>Variable</th><th>Valor para el Cálculo</th></tr>
+                <tr><td><strong>Tiempo Disponible</strong></td><td>3600 segundos</td></tr>
+                <tr><td><strong>Demanda del Cliente</strong></td><td>108 transmisiones</td></tr>
+                <tr><td><strong>Eficiencia / OEE</strong></td><td>90% (0.90)</td></tr>
                 <tr class="highlight-row">
-                    <td style="text-align: right; color: var(--danger);">TU TIEMPO DE ENSAMBLE (Actual Time):</td>
+                    <td style="text-align: right; color: var(--danger);">Tiempo Ciclo:</td>
                     <td style="color: var(--danger); font-size: 1.5rem;" id="res-tiempo">0.00 s</td>
                 </tr>
             </table>
 
             <div class="formula-box">
-                <p><strong>Fórmula TT:</strong> (Tiempo Disponible) / (Demanda del Cliente) = <strong>______ s</strong></p>
-                <p><strong>Fórmula ATT:</strong> (Tiempo Disponible / Capacidad Real) × Eficiencia = <strong>______ s</strong></p>
+                <p><strong>1. Calcula el TT Ideal:</strong><br> (Tiempo Disponible) / (Demanda del Cliente) = <strong>______ s</strong></p>
+                <p><strong>2. Calcula el ATT Real:</strong><br> (Tiempo Disponible / Demanda del Cliente) × Eficiencia = <strong>______ s</strong></p>
             </div>
 
-            <h3 id="mensaje-final" style="margin-top: 20px; font-size: 1.3rem;">Compara tu tiempo de ensamble con los resultados que calculaste. ¿Fuiste un cuello de botella?</h3>
-            <button class="start-btn" style="font-size: 1.2rem; padding: 15px 30px;" onclick="location.reload()">Repetir Ejercicio</button>
+            <h3 style="margin-top: 15px; font-size: 1.2rem; color: var(--primary);">Compara tu Tiempo con los resultados que calculaste. ¿Lograste la meta o fuiste un cuello de botella?</h3>
+            <button class="start-btn" onclick="location.reload()">Repetir Ejercicio</button>
         </div>
     </div>
 
     <script>
-        // === GENERADOR DE 20 PIEZAS ===
-        const imgPaths = ['img/playera.png', 'img/short.png', 'img/tachones.png', 'img/balon.png'];
+        // === DATOS DE IMÁGENES ===
+        const imgPaths = ['img/1.png', 'img/2.png', 'img/3.png', 'img/4.png', 'img/5.png', 'img/6.png', 'img/7.png', 'img/8.png', 'img/9.png', 'img/10.png', 'img/11.png', 'img/12.png', 'img/13.png', 'img/14.png', 'img/15.png', 'img/16.png', 'img/17.png', 'img/18.png', 'img/19.png', 'img/20.png'];
+
+        const avataresClientes = ['img/21.png', 'img/22.png', 'img/23.png', 'img/24.png', 'img/25.png', 'img/26.png', 'img/27.png', 'img/28.png'];
         const totalPiezas = 20;
         
-        let startTime, timerInterval;
-        let isPlaying = false;
+        let startTime, timerInterval, obstacleInterval, customerInterval;
+        let isPlaying = false, isPaused = false;
+        let fixClicksNeeded = 0;
+        
+        let ordenPedidos = [];
+        let clientesGenerados = 0;
+        let clientesAtendidos = 0;
 
-        // Inicializar piezas revueltas en el inventario
+        // Inicializar piezas revueltas sin números
         function initInventory() {
             let inventoryGrid = document.getElementById('inventory-grid');
             let piezas = [];
-            
             for(let i = 1; i <= totalPiezas; i++) {
                 let div = document.createElement('div');
                 div.className = 'drag-item';
                 div.dataset.id = i; 
-                div.innerHTML = `
-                    <div class="item-badge">${i}</div>
-                    <img src="${imgPaths[(i-1) % 4]}" alt="Pieza ${i}">
-                `;
+                div.innerHTML = `<img src="${imgPaths[(i-1) % 20]}" alt="Pieza">`;
                 div.addEventListener('pointerdown', startDrag);
                 piezas.push(div);
             }
-
             piezas.sort(() => Math.random() - 0.5);
             piezas.forEach(p => inventoryGrid.appendChild(p));
         }
 
         initInventory();
 
-        // === MOTOR DRAG & DROP (PERMITE REORDENAR) ===
+        // === LÓGICA DE FILA DE CLIENTES (KANBAN/WIP) ===
+        function spawnCustomer() {
+            if (clientesGenerados >= totalPiezas) {
+                clearInterval(customerInterval);
+                return;
+            }
+
+            let queue = document.getElementById('customer-queue');
+            let card = document.createElement('div');
+            card.className = 'customer-card';
+            
+            let idPedido = ordenPedidos[clientesGenerados];
+            card.id = `customer-${idPedido}`;
+            
+            let avatar = avataresClientes[Math.floor(Math.random() * avataresClientes.length)];
+            let imgPieza = imgPaths[idPedido - 1];
+
+            card.innerHTML = `
+                <div class="speech-bubble">
+                    <img src="${imgPieza}">
+                </div>
+                <img src="${avatar}" class="customer-avatar">
+            `;
+            queue.appendChild(card);
+            
+            if (queue.children.length > 5) {
+                Array.from(queue.children).forEach(c => c.classList.add('angry'));
+            }
+
+            clientesGenerados++;
+        }
+
+        // === MOTOR DRAG & DROP Y BANDA TRANSPORTADORA ===
         let activeItem = null; 
         let activeClone = null;
 
         function startDrag(e) {
-            if (!isPlaying) return;
+            if (!isPlaying || isPaused) return;
+            
             activeItem = this;
             activeItem.style.opacity = '0.3';
 
@@ -277,75 +401,109 @@
 
             activeClone.remove();
             activeClone = null;
-            activeItem.style.opacity = '1';
+            if(activeItem) activeItem.style.opacity = '1';
 
             let els = document.elementsFromPoint(e.clientX, e.clientY);
-            let boxZone = els.find(el => el.id === 'box-grid');
+            let factoryDropzone = els.find(el => el.closest('#factory-dropzone'));
             let inventoryZone = els.find(el => el.id === 'inventory-grid');
-            let targetItem = els.find(el => el.classList.contains('drag-item') && el !== activeItem && el.parentNode.id === 'box-grid');
+            let errorMsg = document.getElementById('error-msg');
 
-            if (boxZone) {
-                if (targetItem) {
-                    boxZone.insertBefore(activeItem, targetItem);
+            if (factoryDropzone) {
+                // Validación de pieza
+                let idEsperado = ordenPedidos[clientesAtendidos];
+                if (parseInt(activeItem.dataset.id) === idEsperado) {
+                    
+                    // 1. Crear la pieza animada en la banda
+                    let animItem = document.createElement('div');
+                    animItem.className = 'belt-item';
+                    animItem.innerHTML = `<img src="${imgPaths[idEsperado - 1]}">`;
+                    document.getElementById('items-on-belt').appendChild(animItem);
+                    
+                    // 2. Eliminar del inventario para siempre
+                    activeItem.remove();
+
+                    // 3. Procesar cliente de la fila
+                    let frontCustomer = document.getElementById(`customer-${idEsperado}`);
+                    if (frontCustomer) frontCustomer.remove();
+                    
+                    let queue = document.getElementById('customer-queue');
+                    if (queue.children.length <= 5) {
+                        Array.from(queue.children).forEach(c => c.classList.remove('angry'));
+                    }
+
+                    clientesAtendidos++;
+                    errorMsg.innerText = '✔️ ¡Pieza enviada al empaque!';
+                    errorMsg.style.color = 'var(--primary)';
+
+                    // 4. Actualizar contador de la caja cuando la pieza caiga (después de 1.5s)
+                    setTimeout(() => {
+                        document.getElementById('box-counter').innerText = clientesAtendidos;
+                        animItem.remove(); 
+                        
+                        if (clientesAtendidos >= totalPiezas) {
+                            terminarJuego();
+                        }
+                    }, 1500);
+
                 } else {
-                    boxZone.appendChild(activeItem);
+                    errorMsg.innerText = `❌ Error: Esa no es la pieza que pidió el cliente en turno.`;
+                    errorMsg.style.color = 'var(--danger)';
+                    let dropzoneUI = document.getElementById('factory-dropzone');
+                    dropzoneUI.classList.remove('error-shake'); void dropzoneUI.offsetWidth; dropzoneUI.classList.add('error-shake');
                 }
             } else if (inventoryZone) {
-                inventoryZone.appendChild(activeItem);
-                reordenarInventario(); 
+                // Regresa al inventario donde caiga
+                let targetItem = els.find(el => el.classList.contains('drag-item') && el !== activeItem && el.parentNode.id === 'inventory-grid');
+                if (targetItem) {
+                    inventoryZone.insertBefore(activeItem, targetItem);
+                } else {
+                    inventoryZone.appendChild(activeItem);
+                }
+                errorMsg.innerText = 'Arrastra la pieza solicitada a la banda...';
+                errorMsg.style.color = 'var(--dark)';
             }
             
-            document.getElementById('error-msg').innerText = ''; 
-            document.getElementById('box-grid').classList.remove('error-shake');
             activeItem = null;
         }
 
-        function reordenarInventario() {
-            let inv = document.getElementById('inventory-grid');
-            let items = Array.from(inv.children);
-            items.sort((a, b) => parseInt(a.dataset.id) - parseInt(b.dataset.id));
-            items.forEach(item => inv.appendChild(item));
-        }
-
-        // === BOTONES DE CONTROL ===
-        function clearBox() {
-            let box = document.getElementById('box-grid');
-            let inv = document.getElementById('inventory-grid');
-            while (box.firstChild) {
-                inv.appendChild(box.firstChild);
-            }
-            reordenarInventario();
-            document.getElementById('error-msg').innerText = '';
-            box.classList.remove('error-shake');
-        }
-
-        function sendKit() {
-            let itemsInBox = Array.from(document.getElementById('box-grid').children);
-            let errorMsg = document.getElementById('error-msg');
-            let boxGrid = document.getElementById('box-grid');
-
-            if (itemsInBox.length < totalPiezas) {
-                errorMsg.innerText = `❌ Incompleto: Tienes ${itemsInBox.length} de 20 piezas.`;
-                boxGrid.classList.remove('error-shake'); void boxGrid.offsetWidth; boxGrid.classList.add('error-shake');
-                return;
-            }
-
-            let ordenCorrecto = true;
-            for (let i = 0; i < totalPiezas; i++) {
-                if (parseInt(itemsInBox[i].dataset.id) !== (i + 1)) {
-                    ordenCorrecto = false;
-                    break;
+        // === LÓGICA DE PAROS DE LÍNEA ===
+        function randomObstacle() {
+            if (isPlaying && !isPaused && Math.random() < 0.3) {
+                isPaused = true;
+                document.getElementById('delay-overlay').style.display = 'flex';
+                fixClicksNeeded = 3;
+                document.getElementById('fix-btn').innerText = `Reparar (${fixClicksNeeded})`;
+                
+                document.getElementById('conveyor-surface').classList.add('paused');
+                
+                document.querySelectorAll('.belt-item').forEach(el => {
+                    el.style.animationPlayState = 'paused';
+                });
+                
+                if (activeClone) {
+                    activeClone.remove();
+                    activeClone = null;
+                    if(activeItem) activeItem.style.opacity = '1';
+                    activeItem = null;
+                    document.removeEventListener('pointermove', moveDrag);
+                    document.removeEventListener('pointerup', endDrag);
                 }
             }
+        }
 
-            if (!ordenCorrecto) {
-                errorMsg.innerText = "❌ Orden Incorrecto. ¡Puedes arrastrarlas dentro de la caja para reacomodarlas!";
-                boxGrid.classList.remove('error-shake'); void boxGrid.offsetWidth; boxGrid.classList.add('error-shake');
-                return;
+        function fixMachine() {
+            fixClicksNeeded--;
+            if (fixClicksNeeded > 0) {
+                document.getElementById('fix-btn').innerText = `Reparar (${fixClicksNeeded})`;
+            } else {
+                document.getElementById('delay-overlay').style.display = 'none';
+                isPaused = false;
+                
+                document.getElementById('conveyor-surface').classList.remove('paused');
+                document.querySelectorAll('.belt-item').forEach(el => {
+                    el.style.animationPlayState = 'running';
+                });
             }
-
-            clearInterval(timerInterval);
-            mostrarResultados();
         }
 
         // === RELOJ Y LÓGICA GENERAL ===
@@ -353,21 +511,36 @@
             document.getElementById('start-screen').style.display = 'none';
             isPlaying = true;
             startTime = Date.now();
+            
+            ordenPedidos = Array.from({length: totalPiezas}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+            clientesGenerados = 0;
+            clientesAtendidos = 0;
+
             timerInterval = setInterval(updateTimer, 50);
+            
+            spawnCustomer();
+            customerInterval = setInterval(spawnCustomer, 1665);
+            obstacleInterval = setInterval(randomObstacle, 7500);
         }
 
         function updateTimer() {
             let currentTime = (Date.now() - startTime) / 1000;
-            let timeDisplay = document.getElementById('actual-time');
-            timeDisplay.innerText = currentTime.toFixed(2);
-            
-            // Ya no cambiamos de color aquí porque no queremos revelar el TT antes de que lo calculen.
+            document.getElementById('actual-time').innerText = currentTime.toFixed(2);
         }
 
-        function mostrarResultados() {
+        function terminarJuego() {
+            clearInterval(timerInterval);
+            clearInterval(obstacleInterval);
+            clearInterval(customerInterval);
+            
+            document.getElementById('conveyor-surface').classList.add('paused');
+
             let tiempoFinal = ((Date.now() - startTime) / 1000).toFixed(2);
             document.getElementById('res-tiempo').innerText = tiempoFinal + " s";
-            document.getElementById('end-screen').style.display = 'flex';
+            
+            setTimeout(() => {
+                document.getElementById('end-screen').style.display = 'flex';
+            }, 500);
         }
     </script>
 </body>
