@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Reto Takt Time - Simulador GM</title>
     <style>
         /* === AJUSTES RESPONSIVE SIN TOCAR LÓGICA === */
@@ -19,7 +19,7 @@
 
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; /* Esto evita que la tablet se mueva */
+            overflow: hidden; 
             touch-action: none;
         }
 
@@ -27,34 +27,13 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: repeating-linear-gradient(0deg, #28a745, #28a745 40px, #218838 40px, #218838 80px);
             display: flex; flex-direction: column;
-            /* Escala el contenido si la pantalla es muy pequeña */
             transform-origin: top center;
         }
 
-        /* Contenedor principal que se adapta */
         .main-wrapper {
             width: 100vw; height: 100vh;
             display: flex; flex-direction: column;
             padding: 10px;
-        }
-        /* === VARIABLES Y RESET === */
-        :root {
-            --primary: #007A33;
-            --dark: #00441b;
-            --light: #f8f9fa;
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --gold: #FFD700;
-        }
-
-        * { box-sizing: border-box; user-select: none; }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: repeating-linear-gradient(0deg, #28a745, #28a745 40px, #218838 40px, #218838 80px);
-            margin: 0; padding: 10px; color: #333; height: 100vh;
-            display: flex; flex-direction: column; overflow: hidden;
-            touch-action: none; 
         }
 
         h1 { text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); margin: 0 0 10px 0; font-size: 1.5rem; text-transform: uppercase; }
@@ -107,26 +86,26 @@
             overflow: hidden;
         }
         .col-inventory { flex: 1.2; }
-        .col-box { flex: 1.8; justify-content: center; }
+        .col-box { flex: 1.8; justify-content: center; } 
 
         h3 { margin-top: 0; margin-bottom: 10px; color: var(--dark); font-size: 1.1rem; text-align: center; }
 
         /* === INVENTARIO === */
         .grid-zone { 
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
-            width: 100%; flex: 1; overflow-y: auto; padding: 10px;
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; 
+            width: 100%; flex: 1; overflow-y: auto; padding: 8px;
             background-color: #e9ecef; border: 3px dashed var(--primary); border-radius: 10px;
             align-content: start; 
         }
 
         .drag-item { 
-            background: white; border: 2px solid var(--primary); border-radius: 10px; 
+            background: white; border: 2px solid var(--primary); border-radius: 8px; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            padding: 8px; cursor: grab; box-shadow: 0 4px 0 var(--dark); position: relative;
+            padding: 4px; cursor: grab; box-shadow: 0 3px 0 var(--dark); position: relative;
             touch-action: none; transition: transform 0.1s;
         }
-        .drag-item:active { box-shadow: 0 0 0 var(--dark); transform: translateY(4px); }
-        .drag-item img { width: 50px; height: 50px; object-fit: contain; pointer-events: none; }
+        .drag-item:active { box-shadow: 0 0 0 var(--dark); transform: translateY(3px); }
+        .drag-item img { width: 38px; height: 38px; object-fit: contain; pointer-events: none; }
 
         .floating-clone { 
             position: fixed; z-index: 9999; width: 70px; height: 70px; pointer-events: none; 
@@ -190,28 +169,54 @@
             100% { left: calc(100% + 40px); transform: scale(0.4) translateY(60px); opacity: 0; } 
         }
 
+        /* Estilo para las capturas de instrucciones */
+        .instruction-img {
+            display: block;
+            max-width: 90%;
+            max-height: 140px; /* Evita que la imagen se haga gigante */
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #ccc;
+            margin: 10px auto; /* Lo centra */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
         /* === PANTALLAS MODALES === */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; }
-        .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; border: 5px solid var(--gold); max-width: 90%; }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; text-align: center; border: 5px solid var(--gold); max-width: 95%; max-height: 95vh; overflow-y: auto;}
         
-        /* Ajustes Modal de Inicio */
         .modal-inicio { background: rgba(255, 255, 255, 0.95); border: 5px solid var(--gold); color: var(--dark); max-width: 800px; text-align: left; }
         
-        .start-btn { font-size: 1.5rem; padding: 15px 30px; background: var(--primary); color: white; border: none; border-radius: 15px; cursor: pointer; margin-top: 20px; font-weight: bold; width: 100%; text-transform: uppercase;}
+        .start-btn { font-size: 1.3rem; padding: 15px 30px; background: var(--primary); color: white; border: none; border-radius: 15px; cursor: pointer; margin-top: 15px; font-weight: bold; width: 100%; text-transform: uppercase;}
         .start-btn:active { transform: scale(0.98); }
         .fix-btn { font-size: 2rem; padding: 20px 40px; background: white; color: var(--danger); border: none; border-radius: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 0 #900; margin-top: 20px;}
         .fix-btn:active { transform: translateY(5px); box-shadow: none; }
 
-        .results-table { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 1.1rem; }
-        .results-table th, .results-table td { padding: 10px; border-bottom: 1px solid #ddd; text-align: center; }
+        /* Estilos Pizarra y Fórmulas */
+        .results-table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 1.1rem; }
+        .results-table th, .results-table td { padding: 8px; border-bottom: 1px solid #ddd; text-align: center; }
         .results-table th { background: var(--primary); color: white; }
         .results-table .highlight-row { background-color: #e9ecef; font-weight: bold; }
         
-        .formula-box { background: #f8f9fa; border: 2px dashed #ccc; border-radius: 10px; padding: 15px; margin-top: 15px; text-align: left; font-size: 1.1rem; }
+        .formula-box { background: #f8f9fa; border: 2px dashed #ccc; border-radius: 10px; padding: 15px; margin-top: 10px; text-align: center; font-size: 1.1rem; }
+        
+        .math-equation { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; font-size: 1.2rem;}
+        .math-fraction { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 10px; }
+        .math-num { border-bottom: 2px solid var(--dark); padding: 2px 10px; width: 100%; text-align: center; }
+        .math-den { padding: 2px 10px; width: 100%; text-align: center; }
+        .math-input { width: 90px; font-size: 1.2rem; padding: 5px; text-align: center; border: 2px solid #ccc; border-radius: 5px; outline: none; margin-left: 10px; font-weight: bold;}
+        .math-input.success { border-color: var(--primary); background-color: #d4edda; color: var(--primary); }
+        .math-input.error { border-color: var(--danger); background-color: #f8d7da; color: var(--danger); }
+        .feedback-icon { font-size: 1.5rem; margin-left: 8px; display: none; }
+
+        /* Banner de Resultados */
+        .result-banner { padding: 15px; border-radius: 10px; color: white; font-weight: bold; font-size: 1.4rem; margin-bottom: 15px; text-align: center;}
+        .result-success { background-color: var(--primary); box-shadow: 0 4px 10px rgba(40,167,69,0.5); }
+        .result-fail { background-color: var(--danger); box-shadow: 0 4px 10px rgba(220,53,69,0.5); }
     </style>
 </head>
 <body>
-
+<div class="main-wrapper">
     <h1>🏆 Ensamble de Transmisiones GM 🏆</h1>
 
     <div class="dashboard-top">
@@ -257,9 +262,20 @@
                 <p>Tu misión en esta línea operativa es lograr el ensamble perfecto manteniendo el ritmo de la planta.</p>
                 
                 <ul style="list-style-type: none; padding-left: 0;">
-                    <li style="margin-bottom: 12px;">📦 <strong>La Misión:</strong> Empaca las <strong>20 piezas</strong> en la banda transportadora para armar la transmisión.</li>
-                    <li style="margin-bottom: 12px;">📋 <strong>El Estándar:</strong> Arrastra las piezas <strong>exactamente en el orden</strong> en el que van llegando los pedidos a la fila superior (Pedidos Entrantes).</li>
-                    <li style="margin-bottom: 12px;">⚠️ <strong>Cuidado con los Paros:</strong> Si la máquina falla, repárala rápido. ¡La línea se detiene, pero el reloj y los pedidos siguen acumulándose!</li>
+                    <li style="margin-bottom: 20px;">
+                        📦 <strong>La Misión:</strong> Empaca las <strong>20 piezas</strong> en la banda transportadora para armar la transmisión.
+                    </li>
+                    
+                    <li style="margin-bottom: 20px;">
+                        📋 <strong>El Estándar:</strong> Arrastra las piezas de tu inventario <strong>exactamente en el orden</strong> en el que van llegando los pedidos a la fila superior.
+                        <img src="img/ayuda_pedidos.png" alt="Ejemplo de fila de pedidos" class="instruction-img">
+                    </li>
+                    
+                    <li style="margin-bottom: 20px;">
+                        ⚠️ <strong>Cuidado con los Paros:</strong> Si la máquina falla, repárala dando 3 clics rápidos. ¡La línea se detiene, pero el reloj y los pedidos siguen acumulándose!
+                        <img src="img/ayuda_paro.png" alt="Ejemplo de paro de línea" class="instruction-img">
+                    </li>
+                    
                     <li>⏱️ <strong>El Objetivo Final:</strong> Al terminar de empacar las 20 piezas, detendremos el reloj para ver si tu ensamble logró ganarle al <strong>tiempo calculado (Takt Time)</strong>.</li>
                 </ul>
             </div>
@@ -278,29 +294,55 @@
 
     <div class="modal" id="end-screen">
         <div class="modal-content">
-            <h2 style="font-size: 2rem; margin-top: 0; color: var(--dark);">📊 Análisis de Estandarización</h2>
-            <p style="font-size: 1.1rem; color: #555;">¡Unidad empacada con éxito! Vamos a comparar el ritmo que sacaste con el de la planta. Ayúdanos a calcular el TT y el ATT usando estas variables:</p>
+            
+            <div id="result-banner" class="result-banner"></div>
+
+            <h2 style="font-size: 1.8rem; margin: 0; color: var(--dark);">📊 Análisis de Estandarización</h2>
+            <p style="font-size: 1.1rem; color: #555; margin-bottom: 10px;">¡Utiliza las variables de la planta y comprueba si lograste los objetivos!</p>
             
             <table class="results-table">
                 <tr><th>Variable</th><th>Valor para el Cálculo</th></tr>
                 <tr><td><strong>Tiempo Disponible</strong></td><td>3600 segundos</td></tr>
                 <tr><td><strong>Demanda del Cliente</strong></td><td>108 transmisiones</td></tr>
+                <tr><td><strong>Capacidad Real (Histórico)</strong></td><td>90 transmisiones</td></tr>
                 <tr><td><strong>Eficiencia / OEE</strong></td><td>90% (0.90)</td></tr>
                 <tr class="highlight-row">
-                    <td style="text-align: right; color: var(--danger);">Tiempo Ciclo:</td>
-                    <td style="color: var(--danger); font-size: 1.5rem;" id="res-tiempo">0.00 s</td>
+                    <td style="text-align: right; font-weight: bold;" id="res-label">TU TIEMPO (Actual Time):</td>
+                    <td style="font-size: 1.5rem; font-weight: bold;" id="res-tiempo">0.00 s</td>
                 </tr>
             </table>
 
             <div class="formula-box">
-                <p><strong>1. Calcula el TT Ideal:</strong><br> (Tiempo Disponible) / (Demanda del Cliente) = <strong>______ s</strong></p>
-                <p><strong>2. Calcula el ATT Real:</strong><br> (Tiempo Disponible / Demanda del Cliente) × Eficiencia = <strong>______ s</strong></p>
+                <div class="math-equation">
+                    <strong>Takt Time (TT) = </strong>
+                    <div class="math-fraction">
+                        <span class="math-num">Tiempo Disponible</span>
+                        <span class="math-den">Demanda del Cliente</span>
+                    </div>
+                    <span>=</span>
+                    <input type="number" id="input-tt" class="math-input" placeholder="0.0"> 
+                    <span id="icon-tt" class="feedback-icon"></span>
+                </div>
+                
+                <div class="math-equation">
+                    <strong>Actual TT (ATT) = </strong>
+                    <div class="math-fraction">
+                        <span class="math-num">Tiempo Disponible</span>
+                        <span class="math-den">Capacidad Real</span>
+                    </div>
+                    <span> × Eficiencia =</span>
+                    <input type="number" id="input-att" class="math-input" placeholder="0.0"> 
+                    <span id="icon-att" class="feedback-icon"></span>
+                </div>
+                
+                <button class="start-btn" style="width: auto; padding: 10px 20px; font-size: 1.1rem; margin-top: 5px;" onclick="verificarRespuestas()">✔️ Comprobar Cálculos</button>
             </div>
 
-            <h3 style="margin-top: 15px; font-size: 1.2rem; color: var(--primary);">Compara tu Tiempo con los resultados que calculaste. ¿Lograste la meta o fuiste un cuello de botella?</h3>
-            <button class="start-btn" onclick="location.reload()">Repetir Ejercicio</button>
+            <button class="start-btn" style="background: var(--dark);" onclick="location.reload()">🔄 Repetir Ejercicio</button>
         </div>
     </div>
+
+</div>
 
     <script>
         // === DATOS DE IMÁGENES ===
@@ -312,12 +354,12 @@
         let startTime, timerInterval, obstacleInterval, customerInterval;
         let isPlaying = false, isPaused = false;
         let fixClicksNeeded = 0;
+        let tiempoFinalLogrado = 0.00; // Variable para guardar el tiempo exacto
         
         let ordenPedidos = [];
         let clientesGenerados = 0;
         let clientesAtendidos = 0;
 
-        // Inicializar piezas revueltas sin números
         function initInventory() {
             let inventoryGrid = document.getElementById('inventory-grid');
             let piezas = [];
@@ -335,7 +377,7 @@
 
         initInventory();
 
-        // === LÓGICA DE FILA DE CLIENTES (KANBAN/WIP) ===
+        // === LÓGICA DE FILA DE CLIENTES ===
         function spawnCustomer() {
             if (clientesGenerados >= totalPiezas) {
                 clearInterval(customerInterval);
@@ -367,7 +409,7 @@
             clientesGenerados++;
         }
 
-        // === MOTOR DRAG & DROP Y BANDA TRANSPORTADORA ===
+        // === MOTOR DRAG & DROP ===
         let activeItem = null; 
         let activeClone = null;
 
@@ -409,20 +451,16 @@
             let errorMsg = document.getElementById('error-msg');
 
             if (factoryDropzone) {
-                // Validación de pieza
                 let idEsperado = ordenPedidos[clientesAtendidos];
                 if (parseInt(activeItem.dataset.id) === idEsperado) {
                     
-                    // 1. Crear la pieza animada en la banda
                     let animItem = document.createElement('div');
                     animItem.className = 'belt-item';
                     animItem.innerHTML = `<img src="${imgPaths[idEsperado - 1]}">`;
                     document.getElementById('items-on-belt').appendChild(animItem);
                     
-                    // 2. Eliminar del inventario para siempre
                     activeItem.remove();
 
-                    // 3. Procesar cliente de la fila
                     let frontCustomer = document.getElementById(`customer-${idEsperado}`);
                     if (frontCustomer) frontCustomer.remove();
                     
@@ -435,7 +473,12 @@
                     errorMsg.innerText = '✔️ ¡Pieza enviada al empaque!';
                     errorMsg.style.color = 'var(--primary)';
 
-                    // 4. Actualizar contador de la caja cuando la pieza caiga (después de 1.5s)
+                    // === NUEVO: DETENER EL RELOJ EXACTAMENTE AQUÍ CUANDO LA PIEZA ES CORRECTA ===
+                    if (clientesAtendidos === totalPiezas) {
+                        clearInterval(timerInterval); // Se detiene el cronómetro
+                        tiempoFinalLogrado = ((Date.now() - startTime) / 1000).toFixed(2);
+                    }
+
                     setTimeout(() => {
                         document.getElementById('box-counter').innerText = clientesAtendidos;
                         animItem.remove(); 
@@ -452,7 +495,6 @@
                     dropzoneUI.classList.remove('error-shake'); void dropzoneUI.offsetWidth; dropzoneUI.classList.add('error-shake');
                 }
             } else if (inventoryZone) {
-                // Regresa al inventario donde caiga
                 let targetItem = els.find(el => el.classList.contains('drag-item') && el !== activeItem && el.parentNode.id === 'inventory-grid');
                 if (targetItem) {
                     inventoryZone.insertBefore(activeItem, targetItem);
@@ -466,7 +508,6 @@
             activeItem = null;
         }
 
-        // === LÓGICA DE PAROS DE LÍNEA ===
         function randomObstacle() {
             if (isPlaying && !isPaused && Math.random() < 0.3) {
                 isPaused = true;
@@ -506,7 +547,6 @@
             }
         }
 
-        // === RELOJ Y LÓGICA GENERAL ===
         function startGame() {
             document.getElementById('start-screen').style.display = 'none';
             isPlaying = true;
@@ -519,7 +559,8 @@
             timerInterval = setInterval(updateTimer, 50);
             
             spawnCustomer();
-            customerInterval = setInterval(spawnCustomer, 1665);
+            // Aceleré la salida a 1.35s para darles margen y poder ganar en menos de 33.3s
+            customerInterval = setInterval(spawnCustomer, 1350); 
             obstacleInterval = setInterval(randomObstacle, 7500);
         }
 
@@ -529,18 +570,69 @@
         }
 
         function terminarJuego() {
-            clearInterval(timerInterval);
             clearInterval(obstacleInterval);
             clearInterval(customerInterval);
             
             document.getElementById('conveyor-surface').classList.add('paused');
 
-            let tiempoFinal = ((Date.now() - startTime) / 1000).toFixed(2);
-            document.getElementById('res-tiempo').innerText = tiempoFinal + " s";
+            // Mostrar el tiempo exacto que se capturó al soltar la pieza 20
+            document.getElementById('res-tiempo').innerText = tiempoFinalLogrado + " s";
+            
+            // Evaluar Éxito o Fracaso para el Banner
+            let banner = document.getElementById('result-banner');
+            let labelTiempo = document.getElementById('res-label');
+            let valorTiempo = document.getElementById('res-tiempo');
+
+            if (parseFloat(tiempoFinalLogrado) <= 33.3) {
+                banner.className = 'result-banner result-success';
+                banner.innerHTML = '🎉 ¡FELICIDADES! Lograste empacar dentro del Takt Time (33.3s).';
+                // Pintar de verde si lo logra
+                labelTiempo.style.color = 'var(--primary)';
+                valorTiempo.style.color = 'var(--primary)';
+            } else {
+                banner.className = 'result-banner result-fail';
+                banner.innerHTML = '⚠️ ¡CUELLO DE BOTELLA! Tu tiempo excedió el Takt Time (33.3s).';
+                // Pintar de rojo si se pasa
+                labelTiempo.style.color = 'var(--danger)';
+                valorTiempo.style.color = 'var(--danger)';
+            }
             
             setTimeout(() => {
                 document.getElementById('end-screen').style.display = 'flex';
             }, 500);
+        }
+
+        // === NUEVA FUNCIÓN: VALIDAR CÁLCULOS MATEMÁTICOS ===
+        function verificarRespuestas() {
+            let valTT = parseFloat(document.getElementById('input-tt').value);
+            let valATT = parseFloat(document.getElementById('input-att').value);
+            
+            let iconTT = document.getElementById('icon-tt');
+            let iconATT = document.getElementById('icon-att');
+            let inputTT = document.getElementById('input-tt');
+            let inputATT = document.getElementById('input-att');
+
+            // Validar TT (3600 / 108 = 33.333... aceptamos 33.3)
+            if (valTT === 33.3 || valTT === 33.33) {
+                inputTT.className = 'math-input success';
+                iconTT.innerHTML = '✔️';
+                iconTT.style.display = 'inline';
+            } else {
+                inputTT.className = 'math-input error';
+                iconTT.innerHTML = '❌';
+                iconTT.style.display = 'inline';
+            }
+
+            // Validar ATT ((3600 / 90) * 0.90 = 36.0)
+            if (valATT === 36 || valATT === 36.0) {
+                inputATT.className = 'math-input success';
+                iconATT.innerHTML = '✔️';
+                iconATT.style.display = 'inline';
+            } else {
+                inputATT.className = 'math-input error';
+                iconATT.innerHTML = '❌';
+                iconATT.style.display = 'inline';
+            }
         }
     </script>
 </body>
