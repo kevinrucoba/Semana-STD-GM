@@ -304,7 +304,6 @@
                 <tr><th>Variable</th><th>Valor para el Cálculo</th></tr>
                 <tr><td><strong>Tiempo Disponible</strong></td><td>3600 segundos</td></tr>
                 <tr><td><strong>Demanda del Cliente</strong></td><td>108 transmisiones</td></tr>
-                <tr><td><strong>Capacidad Real (Histórico)</strong></td><td>90 transmisiones</td></tr>
                 <tr><td><strong>Eficiencia / OEE</strong></td><td>90% (0.90)</td></tr>
                 <tr class="highlight-row">
                     <td style="text-align: right; font-weight: bold;" id="res-label">TU TIEMPO (Actual Time):</td>
@@ -328,7 +327,7 @@
                     <strong>Actual TT (ATT) = </strong>
                     <div class="math-fraction">
                         <span class="math-num">Tiempo Disponible</span>
-                        <span class="math-den">Capacidad Real</span>
+                        <span class="math-den">Demanda del Cliente</span>
                     </div>
                     <span> × Eficiencia =</span>
                     <input type="number" id="input-att" class="math-input" placeholder="0.0"> 
@@ -348,7 +347,7 @@
         // === DATOS DE IMÁGENES ===
         const imgPaths = ['img/1.png', 'img/2.png', 'img/3.png', 'img/4.png', 'img/5.png', 'img/6.png', 'img/7.png', 'img/8.png', 'img/9.png', 'img/10.png', 'img/11.png', 'img/12.png', 'img/13.png', 'img/14.png', 'img/15.png', 'img/16.png', 'img/17.png', 'img/18.png', 'img/19.png', 'img/20.png'];
 
-        const avataresClientes = ['img/21.png', 'img/22.png', 'img/23.png', 'img/24.png', 'img/25.png', 'img/26.png', 'img/27.png', 'img/28.png'];
+        const avataresClientes = ['img/21.png', 'img/22.png', 'img/23.png', 'img/24.png', 'img/25.png', 'img/26.png'];
         const totalPiezas = 20;
         
         let startTime, timerInterval, obstacleInterval, customerInterval;
@@ -623,8 +622,8 @@
                 iconTT.style.display = 'inline';
             }
 
-            // Validar ATT ((3600 / 90) * 0.90 = 36.0)
-            if (valATT === 36 || valATT === 36.0) {
+            // Validar ATT ((3600 / 108) * 0.90 = 30.0)
+            if (valATT === 30 || valATT === 30.0) {
                 inputATT.className = 'math-input success';
                 iconATT.innerHTML = '✔️';
                 iconATT.style.display = 'inline';
