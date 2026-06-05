@@ -221,7 +221,7 @@
 
     <div class="dashboard-top">
         <div>📦 Línea Operativa (1 Unidad)</div>
-        <div class="takt-time">Objetivo TT: 33.3s</div>
+        <div class="takt-time">Tiempo para no hacer enojar a tu cliente: 40 segundos</div>
         <div class="actual-time">Tiempo: <span id="actual-time">0.00</span>s</div>
     </div>
 
@@ -276,7 +276,7 @@
                         <img src="img/ayuda_paro.png" alt="Ejemplo de paro de línea" class="instruction-img">
                     </li>
                     
-                    <li>⏱️ <strong>El Objetivo Final:</strong> Al terminar de empacar las 20 piezas, detendremos el reloj para ver si tu ensamble logró ganarle al <strong>tiempo calculado (Takt Time)</strong>.</li>
+                    <li>⏱️ <strong>El Objetivo Final:</strong> Al terminar de empacar las 20 piezas, detendremos el reloj para ver si tu ensamble logró ser menor a <strong> 40 segundos</strong>.</li>
                 </ul>
             </div>
             
@@ -302,9 +302,9 @@
             
             <table class="results-table">
                 <tr><th>Variable</th><th>Valor para el Cálculo</th></tr>
-                <tr><td><strong>Tiempo Disponible</strong></td><td>3600 segundos</td></tr>
-                <tr><td><strong>Demanda del Cliente</strong></td><td>108 transmisiones</td></tr>
-                <tr><td><strong>Eficiencia / OEE</strong></td><td>90% (0.90)</td></tr>
+                <tr><td><strong>Tiempo Disponible por hora (seg)</strong></td><td>3600 segundos</td></tr>
+                <tr><td><strong>Volumen (JPH)</strong></td><td>108 transmisiones</td></tr>
+                <tr><td><strong>Eficiencia</strong></td><td id="res-eficiencia">90% (0.90)</td></tr>
                 <tr class="highlight-row">
                     <td style="text-align: right; font-weight: bold;" id="res-label">TU TIEMPO (Actual Time):</td>
                     <td style="font-size: 1.5rem; font-weight: bold;" id="res-tiempo">0.00 s</td>
@@ -315,8 +315,8 @@
                 <div class="math-equation">
                     <strong>Takt Time (TT) = </strong>
                     <div class="math-fraction">
-                        <span class="math-num">Tiempo Disponible</span>
-                        <span class="math-den">Demanda del Cliente</span>
+                        <span class="math-num">Tiempo Disponible por hora (seg)</span>
+                        <span class="math-den">Volumen (JPH)</span>
                     </div>
                     <span>=</span>
                     <input type="number" id="input-tt" class="math-input" placeholder="0.0"> 
@@ -325,16 +325,17 @@
                 
                 <div class="math-equation">
                     <strong>Actual TT (ATT) = </strong>
-                    <div class="math-fraction">
-                        <span class="math-num">Tiempo Disponible</span>
-                        <span class="math-den">Demanda del Cliente</span>
-                    </div>
-                    <span> × Eficiencia =</span>
+                    <span> TT × Eficiencia =</span>
                     <input type="number" id="input-att" class="math-input" placeholder="0.0"> 
                     <span id="icon-att" class="feedback-icon"></span>
                 </div>
                 
-                <button class="start-btn" style="width: auto; padding: 10px 20px; font-size: 1.1rem; margin-top: 5px;" onclick="verificarRespuestas()">✔️ Comprobar Cálculos</button>
+                <button class="start-btn" style="width: auto; padding: 10px 20px; font-size: 1.1rem; margin-top: 5px;" onclick="verificarRespuestas()">✔️ Comprobar y Ver Puntaje</button>
+            </div>
+
+            <div id="score-display" style="display: none; margin-top: 15px; background: #e9ecef; padding: 15px; border-radius: 10px; border: 2px solid var(--dark); text-align: center;">
+                <h3 style="margin: 0; color: var(--dark); font-size: 1.8rem;">Puntaje Final: <span id="final-score" style="color: var(--primary);">0</span> / 25</h3>
+                <p style="margin: 5px 0 0 0; font-size: 1.1rem; color: #555;" id="score-details"></p>
             </div>
 
             <button class="start-btn" style="background: var(--dark);" onclick="location.reload()">🔄 Repetir Ejercicio</button>
@@ -354,6 +355,7 @@
         let isPlaying = false, isPaused = false;
         let fixClicksNeeded = 0;
         let tiempoFinalLogrado = 0.00; // Variable para guardar el tiempo exacto
+        let eficienciaAleatoria = 90;
         
         let ordenPedidos = [];
         let clientesGenerados = 0;
@@ -550,6 +552,9 @@
             document.getElementById('start-screen').style.display = 'none';
             isPlaying = true;
             startTime = Date.now();
+
+            // Generar Eficiencia aleatoria entre 50 y 95
+            eficienciaAleatoria = Math.floor(Math.random() * (95 - 50 + 1)) + 50;
             
             ordenPedidos = Array.from({length: totalPiezas}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
             clientesGenerados = 0;
@@ -574,24 +579,25 @@
             
             document.getElementById('conveyor-surface').classList.add('paused');
 
-            // Mostrar el tiempo exacto que se capturó al soltar la pieza 20
             document.getElementById('res-tiempo').innerText = tiempoFinalLogrado + " s";
             
-            // Evaluar Éxito o Fracaso para el Banner
+            // Actualizar la tabla con el número aleatorio de eficiencia
+            document.getElementById('res-eficiencia').innerHTML = `${eficienciaAleatoria}% (${(eficienciaAleatoria/100).toFixed(2)})`;
+            // Ocultar el puntaje previo
+            document.getElementById('score-display').style.display = 'none';
+
             let banner = document.getElementById('result-banner');
             let labelTiempo = document.getElementById('res-label');
             let valorTiempo = document.getElementById('res-tiempo');
 
-            if (parseFloat(tiempoFinalLogrado) <= 33.3) {
+            if (parseFloat(tiempoFinalLogrado) <= 40) {
                 banner.className = 'result-banner result-success';
-                banner.innerHTML = '🎉 ¡FELICIDADES! Lograste empacar dentro del Takt Time (33.3s).';
-                // Pintar de verde si lo logra
+                banner.innerHTML = '🎉 ¡FELICIDADES! Lograste empacar dentro del Tiempo.';
                 labelTiempo.style.color = 'var(--primary)';
                 valorTiempo.style.color = 'var(--primary)';
             } else {
                 banner.className = 'result-banner result-fail';
-                banner.innerHTML = '⚠️ ¡CUELLO DE BOTELLA! Tu tiempo excedió el Takt Time (33.3s).';
-                // Pintar de rojo si se pasa
+                banner.innerHTML = '⚠️ ¡CUELLO DE BOTELLA! Tu tiempo excedió.';
                 labelTiempo.style.color = 'var(--danger)';
                 valorTiempo.style.color = 'var(--danger)';
             }
@@ -601,7 +607,6 @@
             }, 500);
         }
 
-        // === NUEVA FUNCIÓN: VALIDAR CÁLCULOS MATEMÁTICOS ===
         function verificarRespuestas() {
             let valTT = parseFloat(document.getElementById('input-tt').value);
             let valATT = parseFloat(document.getElementById('input-att').value);
@@ -611,27 +616,63 @@
             let inputTT = document.getElementById('input-tt');
             let inputATT = document.getElementById('input-att');
 
-            // Validar TT (3600 / 108 = 33.333... aceptamos 33.3)
+            let puntosMate = 0;
+            let ttCorrecto = false;
+            let attCorrecto = false;
+
+            // Validar TT (3600 / 108 = 33.333...)
             if (valTT === 33.3 || valTT === 33.33) {
                 inputTT.className = 'math-input success';
                 iconTT.innerHTML = '✔️';
                 iconTT.style.display = 'inline';
+                ttCorrecto = true;
             } else {
                 inputTT.className = 'math-input error';
                 iconTT.innerHTML = '❌';
                 iconTT.style.display = 'inline';
             }
 
-            // Validar ATT ((3600 / 108) * 0.90 = 30.0)
-            if (valATT === 30 || valATT === 30.0) {
+            // Validar ATT (TT * Eficiencia)
+            // Se da un margen de error de 0.2 para evitar que una falla por redondeo se marque como error
+            let attEsperado = 33.3 * (eficienciaAleatoria / 100);
+            if (Math.abs(valATT - attEsperado) <= 0.2) {
                 inputATT.className = 'math-input success';
                 iconATT.innerHTML = '✔️';
                 iconATT.style.display = 'inline';
+                attCorrecto = true;
             } else {
                 inputATT.className = 'math-input error';
                 iconATT.innerHTML = '❌';
                 iconATT.style.display = 'inline';
             }
+
+            // Puntaje de matemáticas (20 pts si ambos están bien, 0 si no)
+            if (ttCorrecto && attCorrecto) {
+                puntosMate = 20;
+            }
+
+            // Puntaje de Tiempo
+            let puntosTiempo = 0;
+            let tiempoJugado = parseFloat(tiempoFinalLogrado);
+
+            if (tiempoJugado <= 40) {
+                puntosTiempo = 5;
+            } else if (tiempoJugado <= 50) {
+                puntosTiempo = 4;
+            } else if (tiempoJugado <= 60) {
+                puntosTiempo = 3;
+            } else if (tiempoJugado <= 70) {
+                puntosTiempo = 2;
+            } else if (tiempoJugado <= 80) {
+                puntosTiempo = 1;
+            } else {
+                puntosTiempo = 0;
+            }
+
+            // Mostrar Resultados
+            document.getElementById('final-score').innerText = (puntosMate + puntosTiempo);
+            document.getElementById('score-details').innerHTML = `Cálculos (TT y ATT): <strong>${puntosMate}/20</strong> | Velocidad de Ensamble: <strong>${puntosTiempo}/5</strong>`;
+            document.getElementById('score-display').style.display = 'block';
         }
     </script>
 </body>
