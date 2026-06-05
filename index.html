@@ -306,7 +306,7 @@
                 <tr><td><strong>Volumen (JPH)</strong></td><td>108 transmisiones</td></tr>
                 <tr><td><strong>Eficiencia</strong></td><td id="res-eficiencia">90% (0.90)</td></tr>
                 <tr class="highlight-row">
-                    <td style="text-align: right; font-weight: bold;" id="res-label">TU TIEMPO (Actual Time):</td>
+                    <td style="text-align: right; font-weight: bold;" id="res-label">Tu Tiempo Fue: </td>
                     <td style="font-size: 1.5rem; font-weight: bold;" id="res-tiempo">0.00 s</td>
                 </tr>
             </table>
@@ -335,7 +335,24 @@
 
             <div id="score-display" style="display: none; margin-top: 15px; background: #e9ecef; padding: 15px; border-radius: 10px; border: 2px solid var(--dark); text-align: center;">
                 <h3 style="margin: 0; color: var(--dark); font-size: 1.8rem;">Puntaje Final: <span id="final-score" style="color: var(--primary);">0</span> / 25</h3>
-                <p style="margin: 5px 0 0 0; font-size: 1.1rem; color: #555;" id="score-details"></p>
+                <p style="margin: 5px 0 10px 0; font-size: 1.1rem; color: #333;" id="score-details"></p>
+                
+                <div style="background: white; border-radius: 8px; padding: 10px; border: 1px solid #ccc; font-size: 0.95rem; text-align: left;">
+                    <strong style="display:block; text-align:center; margin-bottom:5px; color:var(--dark);">Rúbrica de Velocidad (Max 5 pts)</strong>
+                    <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.9rem;">
+                        <tr>
+                            <td style="border-bottom: 1px solid #eee; padding: 2px;">≤ 40s: <strong>5 pts</strong></td>
+                            <td style="border-bottom: 1px solid #eee; padding: 2px;">40.01 - 50s: <strong>4 pts</strong></td>
+                            <td style="border-bottom: 1px solid #eee; padding: 2px;">50.01 - 60s: <strong>3 pts</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 2px;">60.01 - 70s: <strong>2 pts</strong></td>
+                            <td style="padding: 2px;">70.01 - 80s: <strong>1 pt</strong></td>
+                            <td style="padding: 2px;">> 80s: <strong>0 pts</strong></td>
+                        </tr>
+                    </table>
+                    <div id="score-justification" style="margin-top: 8px; text-align: center; font-size: 1.05rem; font-weight: bold; color: var(--primary);"></div>
+                </div>
             </div>
 
             <button class="start-btn" style="background: var(--dark);" onclick="location.reload()">🔄 Repetir Ejercicio</button>
@@ -620,8 +637,10 @@
             let ttCorrecto = false;
             let attCorrecto = false;
 
-            // Validar TT (3600 / 108 = 33.333...)
-            if (valTT === 33.3 || valTT === 33.33) {
+            // === VALIDAR TT (Con 1 decimal exacto) ===
+            let ttEsperado = 3600 / 108; // 33.3333...
+            
+            if (Math.trunc(valTT * 10) === Math.trunc(ttEsperado * 10)) {
                 inputTT.className = 'math-input success';
                 iconTT.innerHTML = '✔️';
                 iconTT.style.display = 'inline';
@@ -632,10 +651,10 @@
                 iconTT.style.display = 'inline';
             }
 
-            // Validar ATT (TT * Eficiencia)
-            // Se da un margen de error de 0.2 para evitar que una falla por redondeo se marque como error
-            let attEsperado = 33.3 * (eficienciaAleatoria / 100);
-            if (Math.abs(valATT - attEsperado) <= 0.2) {
+            // === VALIDAR ATT (Con 1 decimal exacto) ===
+            let attEsperado = ttEsperado * (eficienciaAleatoria / 100);
+            
+            if (Math.trunc(valATT * 10) === Math.trunc(attEsperado * 10)) {
                 inputATT.className = 'math-input success';
                 iconATT.innerHTML = '✔️';
                 iconATT.style.display = 'inline';
@@ -651,23 +670,47 @@
                 puntosMate = 20;
             }
 
-            // Puntaje de Tiempo
+            // Puntaje de Tiempo y Justificación
             let puntosTiempo = 0;
             let tiempoJugado = parseFloat(tiempoFinalLogrado);
+            let justificacion = "";
 
             if (tiempoJugado <= 40) {
                 puntosTiempo = 5;
+                justificacion = `⏱️ Hiciste ${tiempoJugado}s (≤ 40s) = ¡Ganaste 5 puntos!`;
             } else if (tiempoJugado <= 50) {
                 puntosTiempo = 4;
+                justificacion = `⏱️ Hiciste ${tiempoJugado}s (Rango 41-50s) = Ganaste 4 puntos.`;
             } else if (tiempoJugado <= 60) {
                 puntosTiempo = 3;
+                justificacion = `⏱️ Hiciste ${tiempoJugado}s (Rango 51-60s) = Ganaste 3 puntos.`;
             } else if (tiempoJugado <= 70) {
                 puntosTiempo = 2;
+                justificacion = `⏱️ Hiciste ${tiempoJugado}s (Rango 61-70s) = Ganaste 2 puntos.`;
             } else if (tiempoJugado <= 80) {
                 puntosTiempo = 1;
+                justificacion = `⏱️ Hiciste ${tiempoJugado}s (Rango 71-80s) = Ganaste 1 punto.`;
             } else {
                 puntosTiempo = 0;
+                justificacion = `⏱️ Hiciste ${tiempoJugado}s (> 80s) = 0 puntos en velocidad.`;
             }
+
+            // Mostrar Resultados en la UI
+            document.getElementById('final-score').innerText = (puntosMate + puntosTiempo);
+            document.getElementById('score-details').innerHTML = `Matemáticas: <strong>${puntosMate}/20 pts</strong> | Velocidad: <strong>${puntosTiempo}/5 pts</strong>`;
+            
+            // Asignar el texto de la justificación
+            let justificacionEl = document.getElementById('score-justification');
+            justificacionEl.innerText = justificacion;
+            
+            // Si le fue mal en tiempo, pintarlo de rojo para que resalte, si no, verde
+            if (puntosTiempo < 3) {
+                justificacionEl.style.color = 'var(--danger)';
+            } else {
+                justificacionEl.style.color = 'var(--primary)';
+            }
+
+            document.getElementById('score-display').style.display = 'block';
 
             // Mostrar Resultados
             document.getElementById('final-score').innerText = (puntosMate + puntosTiempo);
