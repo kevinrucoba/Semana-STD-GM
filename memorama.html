@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorama Mundialista - Ingeniería Industrial</title>
+    <!-- Fuentes de Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Permanent+Marker&family=Roboto:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           TEMÁTICA Y COLORES
+        ========================================= */
+        :root {
+            /* Colores de la cancha */
+            --color-pasto-1: #1a5c20;
+            --color-pasto-2: #217329;
+            /* Colores neón y oscuros para tarjetas */
+            --color-neon: #39ff14; 
+            --color-oscuro: #0a0a0a;
+            /* Colores morados para los Modales (VAR) */
+            --modal-fondo: #4B0082; /* Morado Mundial */
+            --modal-borde: #FFD700; /* Dorado */
+            --color-texto: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            color: var(--color-texto);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            /* Fondo ÚNICO de cancha de fútbol */
+            background: repeating-linear-gradient(
+                0deg,
+                var(--color-pasto-1),
+                var(--color-pasto-1) 50px,
+                var(--color-pasto-2) 50px,
+                var(--color-pasto-2) 100px
+            );
+            background-attachment: fixed;
+        }
+
+        /* =========================================
+           ENCABEZADOS
+        ========================================= */
+        header {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 30px;
+            width: 100%;
+        }
+
+        .subtitle {
+            font-family: 'Roboto', sans-serif;
+            color: var(--color-texto);
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 4px #000;
+            margin-bottom: 0;
+        }
+
+        .title-main {
+            font-family: 'Anton', sans-serif;
+            color: #d4e028; 
+            font-size: 5rem;
+            line-height: 1;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 4px 4px 0px #000, 0 0 15px rgba(212, 224, 40, 0.5);
+            transform: skewX(-5deg); 
+        }
+
+        .banner-ing {
+            background-color: var(--color-oscuro);
+            border: 2px solid var(--color-neon);
+            color: var(--color-neon);
+            display: inline-block;
+            padding: 8px 30px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.3rem;
+            margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+        }
+
+        /* =========================================
+           TABLERO Y CARTAS MÁS GRANDES
+        ========================================= */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            max-width: 1200px; /* Más ancho para que quepan cartas grandes */
+            margin: 0 auto 150px auto; /* Margen inferior extra para que el panel del VAR no tape las cartas de abajo */
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 170px; /* CARTAS MÁS GRANDES */
+            height: 230px;
+            position: relative;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease-in-out;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-inner {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+        }
+
+        .card-cover, .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Reverso de la carta */
+        .card-cover {
+            background-color: var(--color-oscuro);
+            border: 4px solid var(--color-neon);
+            box-shadow: 0 0 12px var(--color-neon), inset 0 0 20px rgba(57, 255, 20, 0.3);
+            color: var(--color-texto);
+            font-family: 'Permanent Marker', cursive; 
+            font-size: 5rem; /* Números más grandes */
+            text-shadow: 4px 4px 0px rgba(0,0,0,0.9);
+        }
+
+        .card-cover .ball-icon {
+            font-size: 1.8rem; /* Balón más grande */
+            margin-top: -20px;
+            filter: drop-shadow(0px 0px 4px #fff);
+        }
+
+        /* Frente de la carta */
+        .card-face {
+            background-color: white;
+            border: 4px solid #fff;
+            transform: rotateY(180deg);
+            box-shadow: 0 0 20px rgba(255,255,255,0.6);
+        }
+
+        .card-face img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+        }
+
+        /* =========================================
+           PANEL DISCRETO PARA EL VAR (NUEVO)
+        ========================================= */
+        .var-panel {
+            position: fixed;
+            bottom: 20px; /* Pegado abajo */
+            left: 50%;
+            transform: translateX(-50%) translateY(150%); /* Oculto más abajo de la pantalla */
+            background-color: var(--modal-fondo);
+            border: 4px solid var(--modal-borde);
+            border-radius: 15px;
+            padding: 15px 30px;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.9), 0 10px 20px rgba(0,0,0,0.6);
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        }
+
+        .var-panel.active {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0); /* Se desliza hacia arriba */
+        }
+
+        .var-panel h3 {
+            color: var(--modal-borde);
+            font-family: 'Anton', sans-serif;
+            font-size: 2rem;
+            margin: 0 0 5px 0;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .var-panel p {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            margin-top: 0;
+            color: white;
+        }
+
+        /* =========================================
+           MODAL DE FEEDBACK (CENTRAL Y QUE TAPA PANTALLA)
+        ========================================= */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); /* Este sí oscurece */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-box {
+            background-color: var(--modal-fondo);
+            border: 4px solid var(--modal-borde);
+            border-radius: 15px;
+            padding: 35px;
+            text-align: center;
+            max-width: 450px;
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.8);
+        }
+
+        .modal-box h3 {
+            color: var(--modal-borde);
+            font-family: 'Anton', sans-serif;
+            font-size: 2.5rem;
+            margin-top: 0;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .modal-box p {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+            color: white;
+        }
+
+        /* =========================================
+           BOTONES
+        ========================================= */
+        button {
+            background-color: var(--color-oscuro);
+            color: white;
+            border: 2px solid white;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            font-family: 'Roboto', sans-serif;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-yes { border-color: #28a745; background-color: #1e7e34; }
+        .btn-yes:hover { background-color: #28a745; }
+        
+        .btn-no { border-color: #dc3545; background-color: #c82333; }
+        .btn-no:hover { background-color: #dc3545; }
+
+        .btn-continue { border-color: var(--modal-borde); background-color: var(--color-oscuro); color: var(--modal-borde); }
+        .btn-continue:hover { background-color: var(--modal-borde); color: var(--color-oscuro); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <p class="subtitle">Semana de Estandarización 2026</p>
+        <h1 class="title-main">MEMORAMA MUNDIALISTA</h1>
+        <div class="banner-ing">⚙️ EQUIPO DE INGENIERÍA INDUSTRIAL ⚙️</div>
+    </header>
+
+    <div class="board" id="game-board">
+        <!-- Las cartas se inyectarán aquí con JavaScript -->
+    </div>
+
+    <!-- PANEL INFERIOR PARA CONFIRMACIÓN (El "VAR") - Ahora es discreto -->
+    <div class="var-panel" id="var-modal">
+        <h3>🖥️ REVISIÓN DEL VAR 🖥️</h3>
+        <p>¿Confirmas que estas cartas forman el par correcto?</p>
+        <div>
+            <button class="btn-yes" onclick="resolveTurn(true)">SÍ, SON EL PAR</button>
+            <button class="btn-no" onclick="resolveTurn(false)">NO, ME EQUIVOQUÉ</button>
+        </div>
+    </div>
+
+    <!-- Modal para el Resultado (Este sí oscurece la pantalla) -->
+    <div class="modal-overlay" id="feedback-modal">
+        <div class="modal-box">
+            <h3 id="feedback-title">Resultado</h3>
+            <p id="feedback-message"></p>
+            <button class="btn-continue" onclick="closeFeedback()">CONTINUAR PARTIDO ⚽</button>
+        </div>
+    </div>
+
+    <script>
+        // =========================================
+        // CONFIGURACIÓN DE LAS CARTAS (9 Pares = 18 Cartas)
+        // =========================================
+        const pairsData = [
+            { id: 1, src: "imgMemorama/Alejandro Calderon.png" }, { id: 1, src: "imgMemorama/Alex Calderon- RESPUESTA.png" },
+            { id: 2, src: "imgMemorama/Rafael Galvan.png" }, { id: 2, src: "imgMemorama/Rafa Galvaln- RESPUESTA.png" },
+            { id: 3, src: "imgMemorama/Revision 27.png" }, { id: 3, src: "imgMemorama/Rev. 27- RESPUESTA.png" },
+            { id: 4, src: "imgMemorama/Tiempo Ciclo.png" }, { id: 4, src: "imgMemorama/TC-Respuesta.png" },
+            { id: 5, src: "imgMemorama/TE Ciclico.png" }, { id: 5, src: "imgMemorama/TE Ciclico-Respuesta.png" },
+            { id: 6, src: "imgMemorama/TE no Ciclico.png" }, { id: 6, src: "imgMemorama/TE No Ciclico- Respuesta.png" },
+            { id: 7, src: "imgMemorama/TT.png" }, { id: 7, src: "imgMemorama/TT- Respuesta.png" },
+            { id: 8, src: "imgMemorama/WPO.png" }, { id: 8, src: "imgMemorama/WPO-Respuesta.png" },
+            // Reemplaza los archivos de abajo por los dos que te faltan
+            { id: 9, src: "imgMemorama/Faltante_1.png" }, { id: 9, src: "imgMemorama/ATT-Respuesta.png" }
+        ];
+
+        // Variables de estado
+        let flippedCards = [];
+        let isLocked = false;
+        let actionToTake = null;
+
+        // =========================================
+        // INICIALIZACIÓN
+        // =========================================
+        function initGame() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+            
+            // Barajear ocultamente
+            let shuffledCards = [...pairsData].sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < shuffledCards.length; i++) {
+                const cardObj = shuffledCards[i];
+                const cardEl = document.createElement('div');
+                cardEl.classList.add('card');
+                cardEl.dataset.pairId = cardObj.id;
+
+                cardEl.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-cover">
+                            <span>${i + 1}</span>
+                            <div class="ball-icon">⚽</div>
+                        </div>
+                        <div class="card-face">
+                            <img src="${cardObj.src}" alt="Carta">
+                        </div>
+                    </div>
+                `;
+
+                cardEl.addEventListener('click', () => flipCard(cardEl));
+                board.appendChild(cardEl);
+            }
+        }
+
+        // =========================================
+        // LÓGICA DE JUEGO
+        // =========================================
+        function flipCard(cardEl) {
+            if (isLocked || cardEl.classList.contains('flipped') || cardEl.classList.contains('matched')) return;
+
+            cardEl.classList.add('flipped');
+            flippedCards.push(cardEl);
+
+            if (flippedCards.length === 2) {
+                isLocked = true;
+                setTimeout(() => {
+                    document.getElementById('var-modal').classList.add('active');
+                }, 700);
+            }
+        }
+
+        function resolveTurn(userSaysMatch) {
+            document.getElementById('var-modal').classList.remove('active');
+            
+            const card1 = flippedCards[0];
+            const card2 = flippedCards[1];
+            const isActualMatch = card1.dataset.pairId === card2.dataset.pairId;
+            
+            const titleEl = document.getElementById('feedback-title');
+            const msgEl = document.getElementById('feedback-message');
+
+            if (userSaysMatch && isActualMatch) {
+                titleEl.innerText = "¡GOLAZO! ⚽";
+                msgEl.innerText = "Excelente decisión. Es un par correcto.";
+                actionToTake = 'keep';
+            } 
+            else if (userSaysMatch && !isActualMatch) {
+                titleEl.innerText = "¡TARJETA ROJA! 🟥";
+                msgEl.innerText = "Confirmaste que era par, pero ERAN INCORRECTAS. Pierdes turno y las cartas se voltean.";
+                actionToTake = 'unflip';
+            } 
+            else if (!userSaysMatch && isActualMatch) {
+                titleEl.innerText = "¡AUTOGOL! 🤦‍♂️";
+                msgEl.innerText = "Eran correctas y pusiste incorrectas. Pierdes el par y tu turno. Se vuelven a voltear.";
+                actionToTake = 'unflip';
+            } 
+            else if (!userSaysMatch && !isActualMatch) {
+                titleEl.innerText = "¡BUENA DEFENSA! 🛡️";
+                msgEl.innerText = "Te diste cuenta que no eran par. Las cartas se voltearán de nuevo.";
+                actionToTake = 'unflip';
+            }
+
+            // Un ligero retraso para darle tiempo al panel del VAR de ocultarse antes de mostrar el resultado
+            setTimeout(() => {
+                document.getElementById('feedback-modal').classList.add('active');
+            }, 300);
+        }
+
+        function closeFeedback() {
+            document.getElementById('feedback-modal').classList.remove('active');
+
+            if (actionToTake === 'keep') {
+                flippedCards[0].classList.add('matched');
+                flippedCards[1].classList.add('matched');
+            } else if (actionToTake === 'unflip') {
+                flippedCards[0].classList.remove('flipped');
+                flippedCards[1].classList.remove('flipped');
+            }
+
+            flippedCards = [];
+            isLocked = false;
+            actionToTake = null;
+        }
+
+        window.onload = initGame;
+    </script>
+</body>
+</html>
