@@ -375,9 +375,76 @@
         .btn-continue { border-color: var(--modal-borde); background-color: var(--color-oscuro); color: var(--modal-borde); }
         .btn-continue:hover { background-color: var(--modal-borde); color: var(--color-oscuro); }
 
+        /* =========================================
+           PANTALLA DE INICIO (NUEVO)
+        ========================================= */
+        .start-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000; /* Para que tape absolutamente todo */
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .start-screen.hidden {
+            visibility: hidden;
+            opacity: 0;
+        }
+
+        .start-screen h1 {
+            font-family: 'Anton', sans-serif;
+            color: #d4e028;
+            font-size: 6.5rem;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 4px 4px 0px #000, 0 0 20px rgba(212, 224, 40, 0.6);
+            transform: skewX(-5deg);
+            text-align: center;
+            line-height: 1;
+        }
+
+        .start-screen p {
+            font-size: 1.8rem;
+            color: white;
+            margin-bottom: 50px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        .btn-start {
+            background-color: var(--modal-fondo);
+            color: var(--modal-borde);
+            border: 4px solid var(--modal-borde);
+            padding: 15px 50px;
+            font-size: 2.2rem;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Anton', sans-serif;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.8);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .btn-start:hover {
+            transform: scale(1.1);
+            background-color: var(--color-oscuro);
+        }
     </style>
 </head>
 <body>
+    <div class="start-screen" id="start-screen">
+        <h1>MEMORAMA<br>MUNDIALISTA</h1>
+        <p>SEMANA DE ESTANDARIZACIÓN 2026</p>
+        <button class="btn-start" onclick="startGame()">⚽ INICIAR PARTIDO ⚽</button>
+    </div>
 
     <!-- RELOJ Y BOTÓN DE REINICIAR -->
     <div class="side-panel">
@@ -483,6 +550,17 @@
                 board.appendChild(cardEl);
             }
         }
+        // =========================================
+        // LÓGICA DE INICIO (NUEVO)
+        // =========================================
+        function startGame() {
+            // Oculta la pantalla de inicio
+            document.getElementById('start-screen').classList.add('hidden');
+            // Baraja y crea el tablero
+            initGame();
+            // Arranca el reloj
+            startTimer();
+        }
 
         // =========================================
         // TEMPORIZADOR Y REINICIO
@@ -522,10 +600,15 @@
         }
 
         function restartGame() {
-            // Ocultar cualquier modal o panel visible
+            // Ocultar cualquier modal visible
             document.getElementById('timeout-panel').classList.remove('active');
             document.getElementById('var-modal').classList.remove('active');
             document.getElementById('feedback-modal').classList.remove('active');
+
+            // Detener el reloj y resetear tiempo a 4 minutos (240 seg)
+            clearInterval(timerInterval);
+            timeLeft = 240;
+            updateTimerDisplay();
 
             // Reiniciar estados lógicos
             flippedCards = [];
@@ -533,9 +616,11 @@
             actionToTake = null;
             matchedPairsCount = 0;
 
-            // Re-renderizar y arrancar reloj
-            initGame();
-            startTimer();
+            // Limpiar el tablero visualmente
+            document.getElementById('game-board').innerHTML = '';
+
+            // Mostrar nuevamente la pantalla de inicio
+            document.getElementById('start-screen').classList.remove('hidden');
         }
 
         // =========================================
@@ -619,11 +704,12 @@
         }
 
         // =========================================
-        // ARRANQUE AL CARGAR LA PÁGINA
+        // ARRANQUE AL CARGAR LA PÁGINA (MODIFICADO)
         // =========================================
         window.onload = () => {
-            initGame();
-            startTimer();
+            // Solo actualizamos el reloj para que diga 04:00, 
+            // pero NO iniciamos el juego ni el tiempo aún.
+            updateTimerDisplay(); 
         };
     </script>
 </body>
