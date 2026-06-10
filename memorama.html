@@ -258,17 +258,20 @@
         /* =========================================
            PANEL INFERIOR PARA EL VAR
         ========================================= */
+        /* =========================================
+           PANEL PARA EL VAR (AHORA A LA IZQUIERDA)
+        ========================================= */
         .var-panel {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(150%);
+            top: 50%; /* Lo centra verticalmente */
+            left: 30px; /* Lo pega a la izquierda con un pequeño margen */
+            transform: translateY(-50%) translateX(-150%); /* Lo oculta fuera de la pantalla por la izquierda */
             background-color: var(--modal-fondo);
             border: 4px solid var(--modal-borde);
             border-radius: 15px;
             padding: 15px 30px;
             text-align: center;
-            max-width: 600px;
+            max-width: 350px; /* Un poco más angosto para que quepa perfecto a un lado */
             width: 90%;
             box-shadow: 0 0 30px rgba(138, 43, 226, 0.9), 0 10px 20px rgba(0,0,0,0.6);
             z-index: 1000;
@@ -280,7 +283,7 @@
         .var-panel.active {
             visibility: visible;
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            transform: translateY(-50%) translateX(0); /* Entra deslizándose desde la izquierda */
         }
 
         .var-panel h3 {
